@@ -1,0 +1,118 @@
+:root {
+  --smoothie-bg: #f5faf7;
+  --smoothie-border: #d9e8de;
+}
+
+body {
+  background: linear-gradient(180deg, #f7fbf8 0%, #eef5f0 100%);
+  min-height: 100vh;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.hero {
+  border: 1px solid var(--smoothie-border);
+  background: var(--smoothie-bg);
+}
+
+.step-pill {
+  border: 1px solid #ced4da;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  color: #6c757d;
+  background: #fff;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.step-pill:hover {
+  border-color: #198754;
+  color: #198754;
+}
+
+.step-pill:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.2);
+}
+
+.step-pill.active {
+  border-color: #198754;
+  background: #198754;
+  color: #fff;
+}
+
+.config-step {
+  display: none;
+}
+
+.config-step.is-active {
+  display: block;
+}
+
+.selectable-card {
+  border-width: 2px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.selectable-card.is-selected {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.15);
+}
+
+.size-input:checked + .size-card {
+  border-color: #198754;
+  box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.15);
+}
+
+.ingredient-image {
+  height: 140px;
+  object-fit: cover;
+}
+
+.sticky-top-config {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+}
+
+.smoothie-visualizer {
+  width: 170px;
+  height: 250px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.smoothie-glass {
+  width: 140px;
+  height: 220px;
+  border: 4px solid #c6ccd4;
+  border-top-width: 6px;
+  border-radius: 10px 10px 24px 24px;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.smoothie-liquid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 25%;
+  background: #d9dee4;
+  transition: height 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+}
+
+@media (max-width: 991px) {
+  .sticky-top-config {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
