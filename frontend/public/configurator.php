@@ -191,6 +191,14 @@ include __DIR__ . '/../templates/layout/header.php';
                 <option value="frozen">Frozen</option>
               </select>
             </div>
+            <div class="col-md-4">
+              <label for="sweetener_type" class="form-label">Süßungsmittel</label>
+              <select id="sweetener_type" class="form-select">
+                <option value="none" selected>ohne</option>
+                <option value="honey">Honig</option>
+                <option value="agave">Agave</option>
+              </select>
+            </div>
           </div>
 
           <h3 class="h6">Toppings</h3>

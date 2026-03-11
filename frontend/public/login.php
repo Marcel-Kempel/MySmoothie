@@ -14,7 +14,7 @@ $formValues = [
 $errors = [];
 $generalError = '';
 
-if (is_post_request()) {
+if (is_post_request()) { #<!-- nur wenn das Formular abgesendet wurde, also POST-Request, wird der folgende Code ausgeführt --> 
     csrf_validate_or_fail($_POST['csrf_token'] ?? null);
 
     $validated = validate_login_input($_POST);
@@ -41,21 +41,23 @@ include __DIR__ . '/../templates/layout/header.php';
 ?>
 <div class="row justify-content-center">
   <div class="col-lg-5 col-xl-4">
-    <div class="card shadow-sm">
+    <div class="card shadow-sm"> <!-- Bootstrap-Karte mit Schatten für das Login-Formular -->
       <div class="card-body p-4">
         <h1 class="h3 mb-3">Login</h1>
         <p class="text-muted mb-4">Melde dich an, um gespeicherte Konfigurationen zu verwalten.</p>
 
+        <!-- Allgemeine Fehlermeldung, z.B. bei ungültigen Anmeldedaten -->
         <?php if ($generalError !== ''): ?>
           <div class="alert alert-danger"><?= e($generalError) ?></div>
         <?php endif; ?>
 
-        <form method="post" novalidate>
+        <!-- Login-Formular mit E-Mail und Passwort -->
+        <form method="post" novalidate> <
           <?= csrf_field() ?>
 
           <div class="mb-3">
             <label for="email" class="form-label">E-Mail</label>
-            <input type="email" class="form-control<?= isset($errors['email']) ? ' is-invalid' : '' ?>" id="email" name="email" value="<?= e($formValues['email']) ?>" required>
+            <input type="email" class="form-control<?= isset($errors['email']) ? ' is-invalid' : '' ?>" id="email" name="email" value="<?= e($formValues['email']) ?>" required> <!-- E-Mail-Feld mit Validierung und Fehleranzeige  -->
             <?php if (isset($errors['email'])): ?>
               <div class="invalid-feedback"><?= e($errors['email']) ?></div>
             <?php endif; ?>

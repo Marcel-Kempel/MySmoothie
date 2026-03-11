@@ -100,6 +100,7 @@ include __DIR__ . '/../templates/layout/header.php';
               <div><strong>Süßgrad:</strong> <?= e($sweetnessLabels[(string) $configuration['sweetness']] ?? (string) $configuration['sweetness']) ?></div>
               <div><strong>Konsistenz:</strong> <?= e($consistencyLabels[(string) $configuration['consistency']] ?? (string) $configuration['consistency']) ?></div>
               <div><strong>Temperatur:</strong> <?= e($temperatureLabels[(string) $configuration['temperature']] ?? (string) $configuration['temperature']) ?></div>
+              <div><strong>Süßungsmittel:</strong> <?= e($sweetenerTypeLabels[(string) $configuration['sweetener_type']] ?? (string) $configuration['sweetener_type']) ?></div>
             </div>
 
             <div class="mb-3">

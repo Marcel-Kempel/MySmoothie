@@ -13,8 +13,8 @@ if (!is_post_request()) {
     ], 405);
 }
 
-$payload = read_json_input();
-csrf_validate_or_fail(csrf_token_from_request($payload), true);
+$payload = read_json_input(); # liest die JSON-Daten aus dem Request-Body und dekodiert sie in ein assoziatives Array. Wenn die Daten ungültiges JSON sind, wird eine Fehlermeldung zurückgegeben.
+csrf_validate_or_fail(csrf_token_from_request($payload), true); # überprüft, ob der CSRF-Token im Request gültig ist. Der Token wird entweder aus dem JSON-Payload oder aus den HTTP-Headern extrahiert. Wenn der Token ungültig oder nicht vorhanden ist, wird eine Fehlermeldung zurückgegeben.
 
 $user = current_user();
 if (!$user) {
@@ -73,9 +73,11 @@ if ($configurationName === 'Mein Smoothie') {
     $configurationName = 'Mein Smoothie ' . date('d.m.Y H:i');
 }
 
-$sweetness = validate_enum_value((string) ($payload['sweetness'] ?? 'medium'), allowed_sweetness_values(), 'medium');
+# liest und validiert die Werte aus Schritt 3, z.B. Süße, Konsistenz, Temperatur und Süßungsmittel. Wenn ungültige Werte übergeben werden, werden Standardwerte verwendet.
+$sweetness = validate_enum_value((string) ($payload['sweetness'] ?? 'medium'), allowed_sweetness_values(), 'medium'); # validate_enum_value ist eine Hilfsfunktion, die überprüft, ob der übergebene Wert in der Liste der erlaubten Werte enthalten ist. Wenn nicht, wird der Standardwert zurückgegeben.
 $consistency = validate_enum_value((string) ($payload['consistency'] ?? 'standard'), allowed_consistency_values(), 'standard');
 $temperature = validate_enum_value((string) ($payload['temperature'] ?? 'chilled'), allowed_temperature_values(), 'chilled');
+$sweetenerType = validate_enum_value((string) ($payload['sweetener_type'] ?? 'none'), allowed_sweetener_type_values(), 'none');
 
 $couponCode = strtoupper(clean_text_field($payload['coupon_code'] ?? '', 50));
 $coupon = null;
@@ -106,6 +108,7 @@ try {
             'sweetness' => $sweetness,
             'consistency' => $consistency,
             'temperature' => $temperature,
+            'sweetener_type' => $sweetenerType,
         ],
         $ingredientIds,
         $toppingIds,

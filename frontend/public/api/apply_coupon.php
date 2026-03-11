@@ -1,3 +1,6 @@
+<!-- diese Datei wird von JavaScript aufgerufen, um die Gültigkeit eines Gutscheincodes zu überprüfen und 
+den Preis zu berechnen. Sie erwartet einen POST-Request mit JSON-Daten, die die ausgewählte Größe, Zutaten,
+Toppings und den Gutscheincode enthalten. -->
 <?php
 
 declare(strict_types=1);

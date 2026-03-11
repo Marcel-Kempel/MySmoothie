@@ -57,6 +57,8 @@ function validate_registration_input(array $input): array
     ];
 }
 
+# Validiert die Eingabedaten für das Login-Formular. Bereinigt die E-Mail-Adresse 
+# und überprüft, ob sie gültig ist, sowie ob ein Passwort eingegeben wurde.
 function validate_login_input(array $input): array
 {
     $values = [

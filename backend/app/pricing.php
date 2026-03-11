@@ -17,6 +17,11 @@ function allowed_temperature_values(): array
     return ['chilled', 'extra_cold', 'frozen'];
 }
 
+function allowed_sweetener_type_values(): array
+{
+    return ['none', 'honey', 'agave'];
+}
+
 function is_coupon_currently_valid(?array $coupon): bool
 {
     if (!is_array($coupon)) {

@@ -44,10 +44,10 @@ INSERT INTO toppings (id, name, price) VALUES
   (4, 'Kokosflakes', 0.50);
 
 INSERT INTO presets (id, name, description, size_id, sweetness, consistency, temperature) VALUES
-  (1, 'Green Power', 'Grüne Mischung mit frischer Basis.', 2, 'medium', 'standard', 'chilled'),
-  (2, 'Berry Protein', 'Beeren + Protein für Trainingstage.', 3, 'low', 'creamy', 'extra_cold'),
-  (3, 'Tropical Vegan', 'Tropisch, vegan und ausgewogen.', 2, 'medium', 'standard', 'chilled'),
-  (4, 'Detox Fresh', 'Leicht und frisch für zwischendurch.', 1, 'none', 'liquid', 'chilled');
+  (1, 'Green Power', 'Grüne Mischung mit frischer Basis.', 2, 'medium', 'standard', 'chilled', 'none'),
+  (2, 'Berry Protein', 'Beeren + Protein für Trainingstage.', 3, 'low', 'creamy', 'extra_cold', 'honey'),
+  (3, 'Tropical Vegan', 'Tropisch, vegan und ausgewogen.', 2, 'medium', 'standard', 'chilled', 'agave'),
+  (4, 'Detox Fresh', 'Leicht und frisch für zwischendurch.', 1, 'none', 'liquid', 'chilled', 'none');
 
 INSERT INTO preset_ingredients (preset_id, ingredient_id) VALUES
   (1, 10), (1, 11), (1, 6), (1, 8), (1, 1),

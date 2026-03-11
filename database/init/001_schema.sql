@@ -71,6 +71,7 @@ CREATE TABLE presets (
   sweetness ENUM('none', 'low', 'medium', 'high') NOT NULL DEFAULT 'medium',
   consistency ENUM('liquid', 'standard', 'creamy', 'extra_creamy') NOT NULL DEFAULT 'standard',
   temperature ENUM('chilled', 'extra_cold', 'frozen') NOT NULL DEFAULT 'chilled',
+  sweetener_type ENUM('none', 'honey', 'agave') NOT NULL DEFAULT 'none',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_presets_size FOREIGN KEY (size_id) REFERENCES sizes(id)
     ON UPDATE CASCADE ON DELETE RESTRICT
@@ -94,6 +95,7 @@ CREATE TABLE configurations (
   sweetness ENUM('none', 'low', 'medium', 'high') NOT NULL,
   consistency ENUM('liquid', 'standard', 'creamy', 'extra_creamy') NOT NULL,
   temperature ENUM('chilled', 'extra_cold', 'frozen') NOT NULL,
+  sweetener_type ENUM('none', 'honey', 'agave') NOT NULL,
   subtotal DECIMAL(10,2) NOT NULL,
   discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   total_price DECIMAL(10,2) NOT NULL,

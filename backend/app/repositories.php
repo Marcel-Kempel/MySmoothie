@@ -191,8 +191,8 @@ function repo_save_configuration(
         $pdo->beginTransaction();
 
         $insertConfiguration = $pdo->prepare(
-            'INSERT INTO configurations (user_id, name, size_id, sweetness, consistency, temperature, subtotal, discount_amount, total_price, coupon_code)
-             VALUES (:user_id, :name, :size_id, :sweetness, :consistency, :temperature, :subtotal, :discount_amount, :total_price, :coupon_code)'
+            'INSERT INTO configurations (user_id, name, size_id, sweetness, consistency, temperature, sweetener_type, subtotal, discount_amount, total_price, coupon_code)
+             VALUES (:user_id, :name, :size_id, :sweetness, :consistency, :temperature, :sweetener_type, :subtotal, :discount_amount, :total_price, :coupon_code)'
         );
 
         $insertConfiguration->execute([
@@ -202,6 +202,7 @@ function repo_save_configuration(
             ':sweetness' => $configuration['sweetness'],
             ':consistency' => $configuration['consistency'],
             ':temperature' => $configuration['temperature'],
+            ':sweetener_type' => $configuration['sweetener_type'],
             ':subtotal' => $subtotal,
             ':discount_amount' => $discountAmount,
             ':total_price' => $totalPrice,
