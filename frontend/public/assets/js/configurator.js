@@ -28,6 +28,7 @@
   const sweetnessSelect = document.getElementById('sweetness');
   const consistencySelect = document.getElementById('consistency');
   const temperatureSelect = document.getElementById('temperature');
+  const sweetener_typeSelect = document.getElementById('sweetener_type');
   const ingredientSearch = document.getElementById('ingredientSearch');
   const ingredientCategory = document.getElementById('ingredientCategory');
 
@@ -62,6 +63,7 @@
     sweetness: sweetnessSelect ? sweetnessSelect.value : 'medium',
     consistency: consistencySelect ? consistencySelect.value : 'standard',
     temperature: temperatureSelect ? temperatureSelect.value : 'chilled',
+    sweetener_type: sweetener_typeSelect ? sweetener_typeSelect.value : 'none',
     couponCode: '',
     couponApplied: false,
     discountAmount: 0,
@@ -368,6 +370,12 @@
       frozen: 'Frozen',
     };
 
+    const sweetenerTypeLabels = {
+      none: 'ohne',
+      honey: 'Honig',
+      agave: 'Agave',
+    };
+
     const ingredientsList = selectedIngredients.length > 0
       ? selectedIngredients.map((ingredient) => `${ingredient.name} (${formatCurrency(ingredient.price)})`).join('<br>')
       : 'Keine Zutat ausgewählt';
@@ -386,7 +394,8 @@
           <strong>Anpassung</strong><br>
           Süßgrad: ${sweetnessLabels[state.sweetness] || state.sweetness}<br>
           Konsistenz: ${consistencyLabels[state.consistency] || state.consistency}<br>
-          Temperatur: ${temperatureLabels[state.temperature] || state.temperature}
+          Temperatur: ${temperatureLabels[state.temperature] || state.temperature}<br>
+          Süßungsmittel: ${sweetenerTypeLabels[state.sweetener_type] || state.sweetener_type}
         </div>
         <div class="col-md-6">
           <strong>Zutaten (${selectedIngredients.length})</strong><br>
@@ -494,6 +503,7 @@
     state.sweetness = sweetnessSelect ? sweetnessSelect.value : 'medium';
     state.consistency = consistencySelect ? consistencySelect.value : 'standard';
     state.temperature = temperatureSelect ? temperatureSelect.value : 'chilled';
+    state.sweetener_type = sweetener_typeSelect ? sweetener_typeSelect.value : 'none';
   }
 
   function syncUiFromState() {
@@ -519,6 +529,10 @@
 
     if (temperatureSelect) {
       temperatureSelect.value = state.temperature;
+    }
+
+    if (sweetener_typeSelect) {
+      sweetener_typeSelect.value = state.sweetener_type;
     }
   }
 
@@ -598,6 +612,10 @@
     const configurationName = configurationNameInput ? configurationNameInput.value : 'Mein Smoothie';
     showOrderMessage('Konfiguration wird gespeichert...', 'muted');
 
+    // beim Speichern der Konfiguration werden alle relevanten Daten an den Server gesendet, 
+    // damit die Bestellung korrekt angelegt werden kann. Das beinhaltet die IDs der ausgewählten Größe, 
+    // Zutaten und Toppings, sowie die Anpassungen wie Süßgrad, Konsistenz und Temperatur. Auch der 
+    // Gutscheincode wird mitgesendet, damit der Rabatt direkt bei der Bestellung berücksichtigt werden kann.
     try {
       const response = await fetch(configData.api.saveConfiguration, {
         method: 'POST',
@@ -612,6 +630,7 @@
           sweetness: state.sweetness,
           consistency: state.consistency,
           temperature: state.temperature,
+          sweetener_type: state.sweetener_type,
           topping_ids: state.toppingIds,
           coupon_code: state.couponApplied ? state.couponCode : '',
           csrf_token: configData.csrfToken,
@@ -704,6 +723,13 @@
 
   if (temperatureSelect) {
     temperatureSelect.addEventListener('change', () => {
+      readSelectionsFromUi();
+      refreshUi();
+    });
+  }
+
+  if (sweetener_typeSelect) {
+    sweetener_typeSelect.addEventListener('change', () => {
       readSelectionsFromUi();
       refreshUi();
     });
