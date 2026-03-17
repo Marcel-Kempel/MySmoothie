@@ -41,6 +41,17 @@ docker compose down -v
 docker compose up --build
 ```
 
+## Bestehende DB aktualisieren (ohne Reset)
+
+Wenn die Datenbank bereits laeuft, werden Aenderungen in `database/init/*.sql` nicht automatisch uebernommen.
+In diesem Fall die passende Migration manuell ausfuehren (z. B. in DBeaver oder phpMyAdmin).
+
+Beispiel fuer die Umstellung der Zutaten-Bildpfade auf `.jpeg`:
+
+- Datei: `database/migrations/003_update_ingredient_image_paths_to_jpeg.sql`
+
+Nach dem Ausfuehren Seite hart neu laden (`Cmd+Shift+R`), damit der Browser-Cache keine alten Assets anzeigt.
+
 ## Aktive DB-Konfiguration (Docker)
 
 - Host: `db`
