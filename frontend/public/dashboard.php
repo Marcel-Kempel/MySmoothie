@@ -32,8 +32,8 @@ if (is_post_request()) {
 $dashboardData = service_get_dashboard_data((int) $user['id']);
 $configurations = $dashboardData['configurations'];
 
-// Mapping von technischen Enum-Werten zu lesbaren Labels aus einem zentralen Backend-Ort.
-$optionLabels = configuration_option_labels();
+// Mapping von technischen Enum-Werten zu lesbaren Labels aus dem zentralen Optionen-Modul.
+$optionLabels = configuration_adjustment_label_map();
 $adjustmentFields = configuration_adjustment_ui_definitions();
 
 $pageTitle = 'MySmoothie | Dashboard';

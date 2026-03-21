@@ -119,5 +119,4 @@ require_once __DIR__ . '/configuration_options.php';
 require_once __DIR__ . '/pricing.php';
 require_once __DIR__ . '/repositories.php';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/presentation.php';
 require_once __DIR__ . '/services.php';

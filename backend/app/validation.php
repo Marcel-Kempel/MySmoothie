@@ -105,16 +105,6 @@ function validate_id_list(mixed $raw): array
     return $result;
 }
 
-// Prüft Enum-Werte gegen eine Whitelist und liefert sonst den Fallback.
-function validate_enum_value(string $value, array $allowed, string $fallback): string
-{
-    if (in_array($value, $allowed, true)) {
-        return $value;
-    }
-
-    return $fallback;
-}
-
 // Liefert einen sicheren, begrenzten Anzeigenamen für die Konfiguration.
 function validate_configuration_name(mixed $raw): string
 {

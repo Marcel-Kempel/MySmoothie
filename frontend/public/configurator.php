@@ -12,7 +12,7 @@ $toppings = $catalog['toppings'];
 $presets = $catalog['presets'];
 
 // Anzeige-Labels zentral aus dem Backend beziehen (kein UI-Wissen in JS hardcoden).
-$categoryLabels = ingredient_category_labels();
+$categoryLabels = ingredient_category_label_map();
 $ingredientCategoryOptions = ingredient_category_ui_definitions();
 $ingredientBadgeDefinitions = ingredient_feature_badge_rows();
 $adjustmentFields = configuration_adjustment_ui_definitions();
@@ -183,7 +183,6 @@ include __DIR__ . '/../templates/layout/header.php';
                 $field = (string) ($adjustment['field'] ?? '');
                 $label = (string) ($adjustment['label'] ?? $field);
                 $default = (string) ($adjustment['default'] ?? '');
-                $jsKey = (string) ($adjustment['js_key'] ?? $field);
                 $options = is_array($adjustment['options'] ?? null) ? $adjustment['options'] : [];
               ?>
               <?php if ($field === ''): ?>
@@ -195,7 +194,6 @@ include __DIR__ . '/../templates/layout/header.php';
                   id="<?= e($field) ?>"
                   class="form-select"
                   data-adjustment-select="<?= e($field) ?>"
-                  data-adjustment-js-key="<?= e($jsKey) ?>"
                 >
                   <?php foreach ($options as $option): ?>
                     <?php

@@ -13,7 +13,7 @@ Dieses Projekt ist eine Umsetzung mit serverseitigem PHP-Rendering, Vanilla Java
 
 - `frontend/public/` - oeffentliche Weboberflaeche (Seiten, API-Endpunkte, Assets)
 - `frontend/templates/` - wiederverwendbare Frontend-Layouts
-- `backend/app/` - Backend-Logik (Auth, Validation, Repositories, Pricing, Presentation, Services, Bootstrap)
+- `backend/app/` - Backend-Logik (Auth, Validation, Repositories, Pricing, Configuration Options, Services, Bootstrap)
 - `backend/database/connector.php` - Datenbankverbindung
 - `database/init/` - Schema + Seed fuer Erststart
 - `database/migrations/` - inkrementelle SQL-Migrationen fuer bestehende DBs
