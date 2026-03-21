@@ -32,11 +32,8 @@
   const ingredientItems = Array.from(document.querySelectorAll('.ingredient-item'));
   const toppingCheckboxes = Array.from(document.querySelectorAll('.topping-checkbox'));
   const sizeInputs = Array.from(document.querySelectorAll('.size-input'));
+  const adjustmentSelects = Array.from(document.querySelectorAll('[data-adjustment-select]'));
 
-  const sweetnessSelect = document.getElementById('sweetness');
-  const consistencySelect = document.getElementById('consistency');
-  const temperatureSelect = document.getElementById('temperature');
-  const sweetenerTypeSelect = document.getElementById('sweetener_type');
   const ingredientSearch = document.getElementById('ingredientSearch');
   const ingredientCategory = document.getElementById('ingredientCategory');
 
@@ -65,48 +62,71 @@
   const presetById = new Map(presets.map((preset) => [Number(preset.id), preset]));
 
   // ---------- Konstante Label/Styles ----------
-  // Labels kommen bevorzugt vom Backend, damit Frontend/Backend nicht auseinanderlaufen.
-  const backendLabels = configData && typeof configData.labels === 'object' ? configData.labels : {};
+  const rawAdjustments = Array.isArray(configData.adjustments) ? configData.adjustments : [];
 
-  function mergedLabelMap(key, fallbackMap) {
-    const fromBackend = backendLabels[key];
-    if (fromBackend && typeof fromBackend === 'object') {
-      return { ...fallbackMap, ...fromBackend };
+  function normalizeAdjustmentDefinition(definition) {
+    if (!definition || typeof definition !== 'object') {
+      return null;
     }
 
-    return fallbackMap;
+    const field = typeof definition.field === 'string' ? definition.field.trim() : '';
+    if (field === '') {
+      return null;
+    }
+
+    const jsKey = typeof definition.js_key === 'string' && definition.js_key.trim() !== ''
+      ? definition.js_key.trim()
+      : field;
+    const label = typeof definition.label === 'string' && definition.label.trim() !== ''
+      ? definition.label.trim()
+      : field;
+    const defaultValue = typeof definition.default === 'string' ? definition.default : '';
+    const rawOptions = Array.isArray(definition.options) ? definition.options : [];
+    const options = rawOptions
+      .map((option) => {
+        if (!option || typeof option !== 'object') {
+          return null;
+        }
+
+        const value = typeof option.value === 'string' ? option.value : '';
+        if (value === '') {
+          return null;
+        }
+
+        const optionLabel = typeof option.label === 'string' && option.label !== '' ? option.label : value;
+        return { value, label: optionLabel };
+      })
+      .filter(Boolean);
+
+    return { field, jsKey, label, defaultValue, options };
   }
 
-  const labels = {
-    sweetness: mergedLabelMap('sweetness', {
-      none: 'Kein Zucker',
-      low: 'Wenig',
-      medium: 'Mittel',
-      high: 'Süß',
-    }),
-    consistency: mergedLabelMap('consistency', {
-      liquid: 'Flüssig',
-      standard: 'Standard',
-      creamy: 'Cremig',
-      extra_creamy: 'Extra cremig',
-    }),
-    temperature: mergedLabelMap('temperature', {
-      chilled: 'Gekühlt',
-      extra_cold: 'Extra kalt',
-      frozen: 'Frozen',
-    }),
-    sweetenerType: mergedLabelMap('sweetenerType', {
-      none: 'ohne',
-      honey: 'Honig',
-      agave: 'Agave',
-    }),
-  };
+  const normalizedAdjustments = rawAdjustments
+    .map(normalizeAdjustmentDefinition)
+    .filter(Boolean);
+  const adjustmentSelectByField = new Map(
+    adjustmentSelects
+      .map((select) => [String(select.getAttribute('data-adjustment-select') || ''), select])
+      .filter(([field]) => field !== '')
+  );
+  const labels = normalizedAdjustments.reduce((accumulator, definition) => {
+    const optionMap = {};
+    definition.options.forEach((option) => {
+      optionMap[option.value] = option.label;
+    });
+    accumulator[definition.jsKey] = optionMap;
+    return accumulator;
+  }, {});
 
-  const categoryColor = {
+  const defaultCategoryColor = {
     fruit: '#ff8fa3',
     vegetable: '#72c878',
     protein: '#d2b48c',
   };
+  const backendCategoryColor = configData && typeof configData.ingredientCategoryColors === 'object'
+    ? configData.ingredientCategoryColors
+    : {};
+  const categoryColor = { ...defaultCategoryColor, ...backendCategoryColor };
 
   const consistencyOpacity = {
     liquid: 0.72,
@@ -121,14 +141,21 @@
     sizeId: null,
     ingredientIds: [],
     toppingIds: [],
-    sweetness: sweetnessSelect ? sweetnessSelect.value : 'medium',
-    consistency: consistencySelect ? consistencySelect.value : 'standard',
-    temperature: temperatureSelect ? temperatureSelect.value : 'chilled',
-    sweetenerType: sweetenerTypeSelect ? sweetenerTypeSelect.value : 'none',
+    adjustments: {},
     couponCode: '',
     couponApplied: false,
     discountAmount: 0,
   };
+
+  function getAdjustmentValueFromUi(definition) {
+    const select = adjustmentSelectByField.get(definition.field);
+    if (!select) {
+      return definition.defaultValue;
+    }
+
+    const value = typeof select.value === 'string' ? select.value : '';
+    return value !== '' ? value : definition.defaultValue;
+  }
 
   // Einheitliches Währungsformat für alle Preisanzeigen.
   function formatCurrency(value) {
@@ -395,7 +422,8 @@
 
     smoothieLiquid.style.height = `${fillPercent}%`;
     smoothieLiquid.style.backgroundColor = getSmoothieColor();
-    smoothieLiquid.style.opacity = String(consistencyOpacity[state.consistency] || 0.84);
+    const consistencyValue = state.adjustments.consistency || 'standard';
+    smoothieLiquid.style.opacity = String(consistencyOpacity[consistencyValue] || 0.84);
 
     if (!visualizerInfo) {
       return;
@@ -433,10 +461,15 @@
       ? `${escapeHtml(selectedSize.name)} (${Number(selectedSize.ml)} ml)`
       : 'Nicht ausgewählt';
 
-    const sweetnessText = escapeHtml(labels.sweetness[state.sweetness] || state.sweetness);
-    const consistencyText = escapeHtml(labels.consistency[state.consistency] || state.consistency);
-    const temperatureText = escapeHtml(labels.temperature[state.temperature] || state.temperature);
-    const sweetenerTypeText = escapeHtml(labels.sweetenerType[state.sweetenerType] || state.sweetenerType);
+    const adjustmentLines = normalizedAdjustments.map((definition) => {
+      const selectedValue = state.adjustments[definition.jsKey] || definition.defaultValue;
+      const labelMap = labels[definition.jsKey] || {};
+      const selectedLabel = labelMap[selectedValue] || selectedValue;
+      return `${escapeHtml(definition.label)}: ${escapeHtml(selectedLabel)}`;
+    });
+    const adjustmentText = adjustmentLines.length > 0
+      ? adjustmentLines.join('<br>')
+      : 'Keine Anpassung';
     const couponText = escapeHtml(state.couponCode);
 
     summaryContainer.innerHTML = `
@@ -447,10 +480,7 @@
         </div>
         <div class="col-md-6">
           <strong>Anpassung</strong><br>
-          Süßgrad: ${sweetnessText}<br>
-          Konsistenz: ${consistencyText}<br>
-          Temperatur: ${temperatureText}<br>
-          Süßungsmittel: ${sweetenerTypeText}
+          ${adjustmentText}
         </div>
         <div class="col-md-6">
           <strong>Zutaten (${selectedIngredients.length})</strong><br>
@@ -544,10 +574,9 @@
     state.sizeId = selectedSizeInput ? Number(selectedSizeInput.value) : null;
     state.ingredientIds = getCheckedValues(ingredientCheckboxes);
     state.toppingIds = getCheckedValues(toppingCheckboxes);
-    state.sweetness = sweetnessSelect ? sweetnessSelect.value : 'medium';
-    state.consistency = consistencySelect ? consistencySelect.value : 'standard';
-    state.temperature = temperatureSelect ? temperatureSelect.value : 'chilled';
-    state.sweetenerType = sweetenerTypeSelect ? sweetenerTypeSelect.value : 'none';
+    normalizedAdjustments.forEach((definition) => {
+      state.adjustments[definition.jsKey] = getAdjustmentValueFromUi(definition);
+    });
   }
 
   function syncUiFromState() {
@@ -564,21 +593,18 @@
       checkbox.checked = state.toppingIds.includes(Number(checkbox.value));
     });
 
-    if (sweetnessSelect) {
-      sweetnessSelect.value = state.sweetness;
-    }
+    normalizedAdjustments.forEach((definition) => {
+      const select = adjustmentSelectByField.get(definition.field);
+      if (!select) {
+        return;
+      }
 
-    if (consistencySelect) {
-      consistencySelect.value = state.consistency;
-    }
-
-    if (temperatureSelect) {
-      temperatureSelect.value = state.temperature;
-    }
-
-    if (sweetenerTypeSelect) {
-      sweetenerTypeSelect.value = state.sweetenerType;
-    }
+      const allowedValues = new Set(definition.options.map((option) => option.value));
+      const currentValue = state.adjustments[definition.jsKey] || definition.defaultValue;
+      const nextValue = allowedValues.has(currentValue) ? currentValue : definition.defaultValue;
+      state.adjustments[definition.jsKey] = nextValue;
+      select.value = nextValue;
+    });
   }
 
   function resetCouponState() {
@@ -689,16 +715,19 @@
     const configurationName = configurationNameInput ? configurationNameInput.value : 'Mein Smoothie';
     showOrderMessage('Konfiguration wird gespeichert...', 'muted');
 
+    const adjustmentsPayload = {};
+    normalizedAdjustments.forEach((definition) => {
+      adjustmentsPayload[definition.field] = state.adjustments[definition.jsKey] || definition.defaultValue;
+    });
+
     try {
       const { response, data } = await postJson(configData.api.saveConfiguration, {
         name: configurationName,
         size_id: state.sizeId,
         ingredient_ids: state.ingredientIds,
-        sweetness: state.sweetness,
-        consistency: state.consistency,
-        temperature: state.temperature,
-        sweetener_type: state.sweetenerType,
         topping_ids: state.toppingIds,
+        adjustments: adjustmentsPayload,
+        ...adjustmentsPayload,
         coupon_code: state.couponApplied ? state.couponCode : '',
       });
 
@@ -734,10 +763,10 @@
       ? preset.ingredient_ids.map((id) => Number(id))
       : [];
     state.toppingIds = [];
-    state.sweetness = preset.sweetness || 'medium';
-    state.consistency = preset.consistency || 'standard';
-    state.temperature = preset.temperature || 'chilled';
-    state.sweetenerType = preset.sweetener_type || 'none';
+    normalizedAdjustments.forEach((definition) => {
+      const rawValue = preset[definition.field] ?? preset[definition.jsKey] ?? definition.defaultValue;
+      state.adjustments[definition.jsKey] = typeof rawValue === 'string' ? rawValue : definition.defaultValue;
+    });
 
     markCouponDirty();
     syncUiFromState();
@@ -771,21 +800,14 @@
     card.addEventListener('click', handleIngredientCardClick);
   });
 
-  if (sweetnessSelect) {
-    sweetnessSelect.addEventListener('change', () => handleSelectionChange(false));
-  }
+  normalizedAdjustments.forEach((definition) => {
+    const select = adjustmentSelectByField.get(definition.field);
+    if (!select) {
+      return;
+    }
 
-  if (consistencySelect) {
-    consistencySelect.addEventListener('change', () => handleSelectionChange(false));
-  }
-
-  if (temperatureSelect) {
-    temperatureSelect.addEventListener('change', () => handleSelectionChange(false));
-  }
-
-  if (sweetenerTypeSelect) {
-    sweetenerTypeSelect.addEventListener('change', () => handleSelectionChange(false));
-  }
+    select.addEventListener('change', () => handleSelectionChange(false));
+  });
 
   if (ingredientSearch) {
     ingredientSearch.addEventListener('input', filterIngredients);

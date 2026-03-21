@@ -34,6 +34,7 @@ $configurations = $dashboardData['configurations'];
 
 // Mapping von technischen Enum-Werten zu lesbaren Labels aus einem zentralen Backend-Ort.
 $optionLabels = configuration_option_labels();
+$adjustmentFields = configuration_adjustment_ui_definitions();
 
 $pageTitle = 'MySmoothie | Dashboard';
 $activeNav = 'dashboard';
@@ -93,10 +94,20 @@ include __DIR__ . '/../templates/layout/header.php';
             </div>
 
             <div class="small mb-3">
-              <div><strong>Süßgrad:</strong> <?= e($optionLabels['sweetness'][(string) $configuration['sweetness']] ?? (string) $configuration['sweetness']) ?></div>
-              <div><strong>Konsistenz:</strong> <?= e($optionLabels['consistency'][(string) $configuration['consistency']] ?? (string) $configuration['consistency']) ?></div>
-              <div><strong>Temperatur:</strong> <?= e($optionLabels['temperature'][(string) $configuration['temperature']] ?? (string) $configuration['temperature']) ?></div>
-              <div><strong>Süßungsmittel:</strong> <?= e($optionLabels['sweetener_type'][(string) $configuration['sweetener_type']] ?? (string) $configuration['sweetener_type']) ?></div>
+              <?php foreach ($adjustmentFields as $adjustment): ?>
+                <?php
+                  $field = (string) ($adjustment['field'] ?? '');
+                  if ($field === '') {
+                      continue;
+                  }
+
+                  $fieldLabel = (string) ($adjustment['label'] ?? $field);
+                  $default = (string) ($adjustment['default'] ?? '');
+                  $rawValue = (string) ($configuration[$field] ?? $default);
+                  $displayValue = (string) ($optionLabels[$field][$rawValue] ?? $rawValue);
+                ?>
+                <div><strong><?= e($fieldLabel) ?>:</strong> <?= e($displayValue) ?></div>
+              <?php endforeach; ?>
             </div>
 
             <div class="mb-3">

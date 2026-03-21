@@ -2,27 +2,6 @@
 
 declare(strict_types=1);
 
-// Erlaubte Auswahlwerte aus Schritt 3 (Frontend + Backend bleiben konsistent).
-function allowed_sweetness_values(): array
-{
-    return ['none', 'low', 'medium', 'high'];
-}
-
-function allowed_consistency_values(): array
-{
-    return ['liquid', 'standard', 'creamy', 'extra_creamy'];
-}
-
-function allowed_temperature_values(): array
-{
-    return ['chilled', 'extra_cold', 'frozen'];
-}
-
-function allowed_sweetener_type_values(): array
-{
-    return ['none', 'honey', 'agave'];
-}
-
 // Prüft Aktivstatus und optionales Ablaufdatum eines Gutscheins.
 function is_coupon_currently_valid(?array $coupon): bool
 {

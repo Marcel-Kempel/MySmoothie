@@ -115,6 +115,7 @@ function json_response(array $payload, int $statusCode = 200): void
 require_once __DIR__ . '/../database/connector.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/validation.php';
+require_once __DIR__ . '/configuration_options.php';
 require_once __DIR__ . '/pricing.php';
 require_once __DIR__ . '/repositories.php';
 require_once __DIR__ . '/auth.php';

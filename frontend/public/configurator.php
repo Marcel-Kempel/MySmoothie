@@ -13,6 +13,9 @@ $presets = $catalog['presets'];
 
 // Anzeige-Labels zentral aus dem Backend beziehen (kein UI-Wissen in JS hardcoden).
 $categoryLabels = ingredient_category_labels();
+$ingredientCategoryOptions = ingredient_category_ui_definitions();
+$ingredientBadgeDefinitions = ingredient_feature_badge_rows();
+$adjustmentFields = configuration_adjustment_ui_definitions();
 
 // Datenpaket für das Frontend-Script (wird unten als JSON eingebettet).
 $configData = [
@@ -25,7 +28,8 @@ $configData = [
         'applyCoupon' => 'api/apply_coupon.php',
         'saveConfiguration' => 'api/save_configuration.php',
     ],
-    'labels' => configuration_option_labels_for_js(),
+    'ingredientCategoryColors' => ingredient_category_color_map(),
+    'adjustments' => $adjustmentFields,
 ];
 
 $pageTitle = 'MySmoothie | Konfigurator';
@@ -123,9 +127,9 @@ include __DIR__ . '/../templates/layout/header.php';
             <div class="col-md-4">
               <select id="ingredientCategory" class="form-select">
                 <option value="all">Alle Kategorien</option>
-                <option value="fruit">Obst</option>
-                <option value="vegetable">Gemüse</option>
-                <option value="protein">Protein</option>
+                <?php foreach ($ingredientCategoryOptions as $categoryOption): ?>
+                  <option value="<?= e((string) $categoryOption['value']) ?>"><?= e((string) $categoryOption['label']) ?></option>
+                <?php endforeach; ?>
               </select>
             </div>
           </div>
@@ -151,10 +155,14 @@ include __DIR__ . '/../templates/layout/header.php';
                       Kategorie: <?= e($categoryLabels[(string) $ingredient['category']] ?? (string) $ingredient['category']) ?>
                     </div>
                     <div class="d-flex flex-wrap gap-1 mb-2">
-                      <?php if ((int) $ingredient['is_vegan'] === 1): ?><span class="badge text-bg-light border">Vegan</span><?php endif; ?>
-                      <?php if ((int) $ingredient['is_lactose_free'] === 1): ?><span class="badge text-bg-light border">Laktosefrei</span><?php endif; ?>
-                      <?php if ((int) $ingredient['is_high_protein'] === 1): ?><span class="badge text-bg-light border">High Protein</span><?php endif; ?>
-                      <?php if ((int) $ingredient['is_low_sugar'] === 1): ?><span class="badge text-bg-light border">Low Sugar</span><?php endif; ?>
+                      <?php foreach ($ingredientBadgeDefinitions as $badge): ?>
+                        <?php
+                          $badgeField = (string) ($badge['field'] ?? '');
+                          $badgeLabel = (string) ($badge['label'] ?? $badgeField);
+                          $isActive = (int) ($ingredient[$badgeField] ?? 0) === 1;
+                        ?>
+                        <?php if ($isActive): ?><span class="badge text-bg-light border"><?= e($badgeLabel) ?></span><?php endif; ?>
+                      <?php endforeach; ?>
                     </div>
                     <div class="fw-bold text-success">EUR <?= number_format((float) $ingredient['price'], 2, ',', '.') ?></div>
                   </div>
@@ -170,40 +178,36 @@ include __DIR__ . '/../templates/layout/header.php';
           <h2 class="h5">Schritt 3: Individuelle Anpassung</h2>
 
           <div class="row g-3 mb-4">
-            <div class="col-md-4">
-              <label for="sweetness" class="form-label">Süßgrad</label>
-              <select id="sweetness" class="form-select">
-                <option value="none">Kein Zucker</option>
-                <option value="low">Wenig</option>
-                <option value="medium" selected>Mittel</option>
-                <option value="high">Süß</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="consistency" class="form-label">Konsistenz</label>
-              <select id="consistency" class="form-select">
-                <option value="liquid">Flüssig</option>
-                <option value="standard" selected>Standard</option>
-                <option value="creamy">Cremig</option>
-                <option value="extra_creamy">Extra cremig</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="temperature" class="form-label">Temperatur</label>
-              <select id="temperature" class="form-select">
-                <option value="chilled" selected>Gekühlt</option>
-                <option value="extra_cold">Extra kalt</option>
-                <option value="frozen">Frozen</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="sweetener_type" class="form-label">Süßungsmittel</label>
-              <select id="sweetener_type" class="form-select">
-                <option value="none" selected>ohne</option>
-                <option value="honey">Honig</option>
-                <option value="agave">Agave</option>
-              </select>
-            </div>
+            <?php foreach ($adjustmentFields as $adjustment): ?>
+              <?php
+                $field = (string) ($adjustment['field'] ?? '');
+                $label = (string) ($adjustment['label'] ?? $field);
+                $default = (string) ($adjustment['default'] ?? '');
+                $jsKey = (string) ($adjustment['js_key'] ?? $field);
+                $options = is_array($adjustment['options'] ?? null) ? $adjustment['options'] : [];
+              ?>
+              <?php if ($field === ''): ?>
+                <?php continue; ?>
+              <?php endif; ?>
+              <div class="col-md-4">
+                <label for="<?= e($field) ?>" class="form-label"><?= e($label) ?></label>
+                <select
+                  id="<?= e($field) ?>"
+                  class="form-select"
+                  data-adjustment-select="<?= e($field) ?>"
+                  data-adjustment-js-key="<?= e($jsKey) ?>"
+                >
+                  <?php foreach ($options as $option): ?>
+                    <?php
+                      $value = (string) ($option['value'] ?? '');
+                      $optionLabel = (string) ($option['label'] ?? $value);
+                      $isSelected = $value === $default;
+                    ?>
+                    <option value="<?= e($value) ?>" <?= $isSelected ? 'selected' : '' ?>><?= e($optionLabel) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            <?php endforeach; ?>
           </div>
 
           <h3 class="h6">Toppings</h3>

@@ -249,10 +249,7 @@ function service_save_configuration_for_user(int $userId, array $payload): array
     }
 
     $configurationName = validate_configuration_name($payload['name'] ?? 'Mein Smoothie');
-    $sweetness = validate_enum_value((string) ($payload['sweetness'] ?? 'medium'), allowed_sweetness_values(), 'medium');
-    $consistency = validate_enum_value((string) ($payload['consistency'] ?? 'standard'), allowed_consistency_values(), 'standard');
-    $temperature = validate_enum_value((string) ($payload['temperature'] ?? 'chilled'), allowed_temperature_values(), 'chilled');
-    $sweetenerType = validate_enum_value((string) ($payload['sweetener_type'] ?? 'none'), allowed_sweetener_type_values(), 'none');
+    $adjustments = configuration_adjustment_values_from_payload($payload);
 
     $couponCode = service_normalize_coupon_code($payload['coupon_code'] ?? '');
     $coupon = null;
@@ -293,10 +290,7 @@ function service_save_configuration_for_user(int $userId, array $payload): array
             [
                 'name' => $configurationName,
                 'size_id' => $selection['size_id'],
-                'sweetness' => $sweetness,
-                'consistency' => $consistency,
-                'temperature' => $temperature,
-                'sweetener_type' => $sweetenerType,
+                ...$adjustments,
             ],
             $selection['ingredient_ids'],
             $selection['topping_ids'],

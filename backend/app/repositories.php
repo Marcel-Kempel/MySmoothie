@@ -54,10 +54,27 @@ function repo_get_size_by_id(int $sizeId): ?array
     return is_array($size) ? $size : null;
 }
 
+function repo_ingredient_select_sql(string $tableAlias = ''): string
+{
+    $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';
+    $columns = array_merge(
+        ['id', 'name', 'category', 'price', 'image_url'],
+        ingredient_feature_columns()
+    );
+
+    $parts = [];
+    foreach ($columns as $column) {
+        $parts[] = $prefix . $column;
+    }
+
+    return implode(', ', $parts);
+}
+
 function repo_get_ingredients(): array
 {
+    $ingredientSelectSql = repo_ingredient_select_sql();
     $statement = db()->query(
-        'SELECT id, name, category, price, image_url, is_vegan, is_lactose_free, is_high_protein, is_low_sugar FROM ingredients WHERE is_active = 1 ORDER BY category, name'
+        'SELECT ' . $ingredientSelectSql . ' FROM ingredients WHERE is_active = 1 ORDER BY category, name'
     );
 
     return $statement->fetchAll();
@@ -67,6 +84,22 @@ function repo_get_toppings(): array
 {
     $statement = db()->query('SELECT id, name, price FROM toppings ORDER BY name');
     return $statement->fetchAll();
+}
+
+// Zentrale Liste der Anpassungsspalten (Step 3), damit SQL nicht mehrfach gepflegt wird.
+function repo_configuration_adjustment_columns(): array
+{
+    return array_keys(configuration_adjustment_fields());
+}
+
+function repo_adjustment_select_sql(string $tableAlias): string
+{
+    $parts = [];
+    foreach (repo_configuration_adjustment_columns() as $column) {
+        $parts[] = $tableAlias . '.' . $column;
+    }
+
+    return implode(",\n            ", $parts);
 }
 
 // -------------------- ID-Listen für IN-Klauseln --------------------
@@ -95,9 +128,10 @@ function repo_get_ingredients_by_ids(array $ingredientIds): array
         return [];
     }
 
+    $ingredientSelectSql = repo_ingredient_select_sql();
     $clause = repo_build_in_clause($ingredientIds, 'ingredient_id_');
     $statement = db()->prepare(
-        'SELECT id, name, category, price, image_url, is_vegan, is_lactose_free, is_high_protein, is_low_sugar FROM ingredients WHERE is_active = 1 AND id IN (' . $clause['sql'] . ')'
+        'SELECT ' . $ingredientSelectSql . ' FROM ingredients WHERE is_active = 1 AND id IN (' . $clause['sql'] . ')'
     );
     $statement->execute($clause['params']);
 
@@ -123,6 +157,11 @@ function repo_get_toppings_by_ids(array $toppingIds): array
 // -------------------- Presets und Gutscheine --------------------
 function repo_get_presets(): array
 {
+    $adjustmentColumns = repo_configuration_adjustment_columns();
+    $adjustmentDefaults = configuration_adjustment_defaults();
+    $adjustmentSelectSql = repo_adjustment_select_sql('p');
+    $adjustmentSelectFragment = $adjustmentSelectSql !== '' ? "            {$adjustmentSelectSql},\n" : '';
+
     // Presets inkl. Zutatenliste für schnelle Anzeige im Konfigurator laden.
     $statement = db()->query(
         "SELECT
@@ -130,11 +169,7 @@ function repo_get_presets(): array
             p.name,
             p.description,
             p.size_id,
-            p.sweetness,
-            p.consistency,
-            p.temperature,
-            p.sweetener_type,
-            s.name AS size_name,
+{$adjustmentSelectFragment}            s.name AS size_name,
             s.ml AS size_ml,
             s.base_price,
             GROUP_CONCAT(pi.ingredient_id ORDER BY pi.ingredient_id) AS ingredient_ids,
@@ -156,21 +191,24 @@ function repo_get_presets(): array
             $ingredientIds = array_map('intval', explode(',', (string) $row['ingredient_ids']));
         }
 
-        $presets[] = [
+        $preset = [
             'id' => (int) $row['id'],
             'name' => (string) $row['name'],
             'description' => (string) $row['description'],
             'size_id' => (int) $row['size_id'],
-            'sweetness' => (string) $row['sweetness'],
-            'consistency' => (string) $row['consistency'],
-            'temperature' => (string) $row['temperature'],
-            'sweetener_type' => (string) $row['sweetener_type'],
             'size_name' => (string) $row['size_name'],
             'size_ml' => (int) $row['size_ml'],
             'base_price' => (float) $row['base_price'],
             'ingredient_ids' => $ingredientIds,
             'ingredient_names' => (string) ($row['ingredient_names'] ?? ''),
         ];
+
+        foreach ($adjustmentColumns as $column) {
+            $default = $adjustmentDefaults[$column] ?? '';
+            $preset[$column] = (string) ($row[$column] ?? $default);
+        }
+
+        $presets[] = $preset;
     }
 
     return $presets;
@@ -202,24 +240,34 @@ function repo_save_configuration(
         // Transaktion garantiert: entweder alles (Kopf + Relationen) oder nichts.
         $pdo->beginTransaction();
 
+        $adjustmentColumns = repo_configuration_adjustment_columns();
+        $adjustmentDefaults = configuration_adjustment_defaults();
+
+        $columns = ['user_id', 'name', 'size_id'];
+        $params = [
+            ':user_id' => $userId,
+            ':name' => (string) ($configuration['name'] ?? ''),
+            ':size_id' => (int) ($configuration['size_id'] ?? 0),
+        ];
+
+        foreach ($adjustmentColumns as $column) {
+            $columns[] = $column;
+            $params[':' . $column] = (string) ($configuration[$column] ?? ($adjustmentDefaults[$column] ?? ''));
+        }
+
+        $columns = array_merge($columns, ['subtotal', 'discount_amount', 'total_price', 'coupon_code']);
+        $params[':subtotal'] = $subtotal;
+        $params[':discount_amount'] = $discountAmount;
+        $params[':total_price'] = $totalPrice;
+        $params[':coupon_code'] = $couponCode;
+
+        $placeholders = array_map(static fn(string $column): string => ':' . $column, $columns);
         $insertConfiguration = $pdo->prepare(
-            'INSERT INTO configurations (user_id, name, size_id, sweetness, consistency, temperature, sweetener_type, subtotal, discount_amount, total_price, coupon_code)
-             VALUES (:user_id, :name, :size_id, :sweetness, :consistency, :temperature, :sweetener_type, :subtotal, :discount_amount, :total_price, :coupon_code)'
+            'INSERT INTO configurations (' . implode(', ', $columns) . ')
+             VALUES (' . implode(', ', $placeholders) . ')'
         );
 
-        $insertConfiguration->execute([
-            ':user_id' => $userId,
-            ':name' => $configuration['name'],
-            ':size_id' => $configuration['size_id'],
-            ':sweetness' => $configuration['sweetness'],
-            ':consistency' => $configuration['consistency'],
-            ':temperature' => $configuration['temperature'],
-            ':sweetener_type' => $configuration['sweetener_type'],
-            ':subtotal' => $subtotal,
-            ':discount_amount' => $discountAmount,
-            ':total_price' => $totalPrice,
-            ':coupon_code' => $couponCode,
-        ]);
+        $insertConfiguration->execute($params);
 
         $configurationId = (int) $pdo->lastInsertId();
 
@@ -260,16 +308,15 @@ function repo_save_configuration(
 
 function repo_get_user_configurations(int $userId): array
 {
+    $adjustmentSelectSql = repo_adjustment_select_sql('c');
+    $adjustmentSelectFragment = $adjustmentSelectSql !== '' ? "            {$adjustmentSelectSql},\n" : '';
+
     // Erst Kopfdatensätze laden, danach Zutaten/Toppings je Konfiguration anreichern.
     $configurationStatement = db()->prepare(
-        'SELECT
+        "SELECT
             c.id,
             c.name,
-            c.sweetness,
-            c.consistency,
-            c.temperature,
-            c.sweetener_type,
-            c.subtotal,
+{$adjustmentSelectFragment}            c.subtotal,
             c.discount_amount,
             c.total_price,
             c.coupon_code,
@@ -280,7 +327,7 @@ function repo_get_user_configurations(int $userId): array
          FROM configurations c
          INNER JOIN sizes s ON s.id = c.size_id
          WHERE c.user_id = :user_id
-         ORDER BY c.created_at DESC'
+         ORDER BY c.created_at DESC"
     );
 
     $configurationStatement->execute([':user_id' => $userId]);
