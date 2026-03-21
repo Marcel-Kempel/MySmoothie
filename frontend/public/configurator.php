@@ -16,6 +16,46 @@ $categoryLabels = ingredient_category_label_map();
 $ingredientCategoryOptions = ingredient_category_ui_definitions();
 $ingredientBadgeDefinitions = ingredient_feature_badge_rows();
 $adjustmentFields = configuration_adjustment_ui_definitions();
+$selectionDefinitions = configurator_selection_ui_definitions();
+$stepDefinitions = configurator_step_ui_definitions();
+
+$stepByKey = [];
+foreach ($stepDefinitions as $stepDefinition) {
+    $stepKey = is_array($stepDefinition) ? (string) ($stepDefinition['key'] ?? '') : '';
+    if ($stepKey === '') {
+        continue;
+    }
+
+    $stepByKey[$stepKey] = $stepDefinition;
+}
+
+$totalSteps = max(1, count($stepDefinitions));
+$initialProgressWidth = 100 / $totalSteps;
+
+$stepNumber = static function (string $stepKey, int $fallback) use ($stepByKey): int {
+    $step = $stepByKey[$stepKey] ?? null;
+    if (!is_array($step)) {
+        return $fallback;
+    }
+
+    $number = (int) ($step['number'] ?? 0);
+    return $number > 0 ? $number : $fallback;
+};
+
+$stepHeading = static function (string $stepKey, string $fallback) use ($stepByKey): string {
+    $step = $stepByKey[$stepKey] ?? null;
+    if (!is_array($step)) {
+        return $fallback;
+    }
+
+    $number = (int) ($step['number'] ?? 0);
+    $title = (string) ($step['section_title'] ?? '');
+    if ($number <= 0 || $title === '') {
+        return $fallback;
+    }
+
+    return 'Schritt ' . $number . ': ' . $title;
+};
 
 // Datenpaket für das Frontend-Script (wird unten als JSON eingebettet).
 $configData = [
@@ -30,6 +70,8 @@ $configData = [
     ],
     'ingredientCategoryColors' => ingredient_category_color_map(),
     'adjustments' => $adjustmentFields,
+    'selectionDefinitions' => $selectionDefinitions,
+    'steps' => $stepDefinitions,
 ];
 
 $pageTitle = 'MySmoothie | Konfigurator';
@@ -46,16 +88,26 @@ include __DIR__ . '/../templates/layout/header.php';
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h1 class="h4 mb-0">Smoothie Konfigurator</h1>
-          <span class="badge text-bg-success" id="stepBadge">Schritt 1</span>
+          <span class="badge text-bg-success" id="stepBadge">Schritt 1 von <?= $totalSteps ?></span>
         </div>
         <div class="progress mb-3" role="progressbar" aria-label="Fortschritt">
-          <div id="stepProgress" class="progress-bar bg-success" style="width: 0%;"></div>
+          <div id="stepProgress" class="progress-bar bg-success" style="width: <?= number_format($initialProgressWidth, 2, '.', '') ?>%;"></div>
         </div>
         <div class="d-flex flex-wrap gap-2 small" id="stepIndicators">
-          <button type="button" class="step-pill active" data-step-indicator="1">1. Größe</button>
-          <button type="button" class="step-pill" data-step-indicator="2">2. Zutaten</button>
-          <button type="button" class="step-pill" data-step-indicator="3">3. Anpassung</button>
-          <button type="button" class="step-pill" data-step-indicator="4">4. Zusammenfassung</button>
+          <?php foreach ($stepDefinitions as $stepDefinition): ?>
+            <?php
+              $stepKey = (string) ($stepDefinition['key'] ?? '');
+              $stepNumberValue = (int) ($stepDefinition['number'] ?? 0);
+              $stepIndicatorLabel = (string) ($stepDefinition['indicator_label'] ?? $stepKey);
+              $isFirstStep = $stepNumberValue === 1;
+            ?>
+            <?php if ($stepKey === '' || $stepNumberValue <= 0): ?>
+              <?php continue; ?>
+            <?php endif; ?>
+            <button type="button" class="step-pill <?= $isFirstStep ? 'active' : '' ?>" data-step-indicator="<?= $stepNumberValue ?>">
+              <?= $stepNumberValue ?>. <?= e($stepIndicatorLabel) ?>
+            </button>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>
@@ -63,8 +115,8 @@ include __DIR__ . '/../templates/layout/header.php';
     <div class="card shadow-sm">
       <div class="card-body p-4">
         <!-- Schritt 1: Größe wählen oder Preset laden -->
-        <section class="config-step is-active" data-step="1">
-          <h2 class="h5">Schritt 1: Größe wählen</h2>
+        <section class="config-step is-active" data-step="<?= $stepNumber('size', 1) ?>">
+          <h2 class="h5"><?= e($stepHeading('size', 'Schritt 1: Größe wählen')) ?></h2>
           <p class="text-muted">Wähle zuerst die Becher-Größe oder lade ein Preset.</p>
 
           <div class="row g-3 mb-4">
@@ -88,7 +140,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
-          <h3 class="h6 mb-3">Preset laden (Zusatzfeature)</h3>
+          <h3 class="h6 mb-3"><?= e((string) ($selectionDefinitions['presets']['title'] ?? 'Preset laden')) ?> (Zusatzfeature)</h3>
           <div class="row g-3">
             <?php foreach ($presets as $preset): ?>
               <div class="col-md-6">
@@ -116,8 +168,8 @@ include __DIR__ . '/../templates/layout/header.php';
         </section>
 
         <!-- Schritt 2: Zutaten auswählen (inkl. Suche und Kategorie-Filter) -->
-        <section class="config-step" data-step="2">
-          <h2 class="h5">Schritt 2: Zutaten wählen (24 Optionen)</h2>
+        <section class="config-step" data-step="<?= $stepNumber('ingredients', 2) ?>">
+          <h2 class="h5"><?= e($stepHeading('ingredients', 'Schritt 2: Zutaten wählen')) ?> (<?= count($ingredients) ?> Optionen)</h2>
           <p class="text-muted">Mindestens eine Zutat auswählen. Suche und Filter helfen bei der Auswahl.</p>
 
           <div class="row g-2 mb-3">
@@ -174,8 +226,8 @@ include __DIR__ . '/../templates/layout/header.php';
         </section>
 
         <!-- Schritt 3: Parameter feinjustieren + optionale Toppings/Gutschein -->
-        <section class="config-step" data-step="3">
-          <h2 class="h5">Schritt 3: Individuelle Anpassung</h2>
+        <section class="config-step" data-step="<?= $stepNumber('adjustments', 3) ?>">
+          <h2 class="h5"><?= e($stepHeading('adjustments', 'Schritt 3: Individuelle Anpassung')) ?></h2>
 
           <div class="row g-3 mb-4">
             <?php foreach ($adjustmentFields as $adjustment): ?>
@@ -208,7 +260,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
-          <h3 class="h6">Toppings</h3>
+          <h3 class="h6"><?= e((string) ($selectionDefinitions['toppings']['title'] ?? 'Toppings')) ?></h3>
           <div class="row g-2 mb-4">
             <?php foreach ($toppings as $topping): ?>
               <div class="col-md-6">
@@ -232,8 +284,8 @@ include __DIR__ . '/../templates/layout/header.php';
         </section>
 
         <!-- Schritt 4: finale Zusammenfassung und Speichern -->
-        <section class="config-step" data-step="4">
-          <h2 class="h5">Schritt 4: Zusammenfassung</h2>
+        <section class="config-step" data-step="<?= $stepNumber('summary', 4) ?>">
+          <h2 class="h5"><?= e($stepHeading('summary', 'Schritt 4: Zusammenfassung')) ?></h2>
           <p class="text-muted">Prüfe deine Konfiguration und bestelle danach.</p>
 
           <div class="mb-3">

@@ -272,6 +272,53 @@ function configurator_selection_ui_definitions(): array
     return $ui;
 }
 
+// Zentrale Definition der Konfigurator-Schritte (Reihenfolge + UI-Texte).
+// Hier neue Schritte ergaenzen, damit Header/Stepper einheitlich bleiben.
+function configurator_step_definitions(): array
+{
+    return [
+        'size' => [
+            'indicator_label' => 'Größe',
+            'section_title' => 'Größe wählen',
+        ],
+        'ingredients' => [
+            'indicator_label' => 'Zutaten',
+            'section_title' => 'Zutaten wählen',
+        ],
+        'adjustments' => [
+            'indicator_label' => 'Anpassung',
+            'section_title' => 'Individuelle Anpassung',
+        ],
+        'summary' => [
+            'indicator_label' => 'Zusammenfassung',
+            'section_title' => 'Zusammenfassung',
+        ],
+    ];
+}
+
+function configurator_step_ui_definitions(): array
+{
+    $ui = [];
+    $position = 1;
+
+    foreach (configurator_step_definitions() as $key => $definition) {
+        $stepKey = (string) $key;
+        $indicatorLabel = (string) ($definition['indicator_label'] ?? $stepKey);
+        $sectionTitle = (string) ($definition['section_title'] ?? $indicatorLabel);
+
+        $ui[] = [
+            'key' => $stepKey,
+            'number' => $position,
+            'indicator_label' => $indicatorLabel,
+            'section_title' => $sectionTitle,
+        ];
+
+        $position++;
+    }
+
+    return $ui;
+}
+
 // Zentrale Definition der Zutatenkategorien inkl. Anzeigefarbe (z. B. Visualisierung).
 function ingredient_category_definitions(): array
 {
