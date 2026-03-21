@@ -16,6 +16,11 @@ $categoryLabels = ingredient_category_label_map();
 $ingredientCategoryOptions = ingredient_category_ui_definitions();
 $ingredientBadgeDefinitions = ingredient_feature_badge_rows();
 $adjustmentFields = configuration_adjustment_ui_definitions();
+$selectionDefinitions = configurator_selection_ui_definitions();
+
+$sizeSelection = $selectionDefinitions['sizes'] ?? [];
+$presetSelection = $selectionDefinitions['presets'] ?? [];
+$toppingSelection = $selectionDefinitions['toppings'] ?? [];
 
 // Datenpaket für das Frontend-Script (wird unten als JSON eingebettet).
 $configData = [
@@ -30,6 +35,7 @@ $configData = [
     ],
     'ingredientCategoryColors' => ingredient_category_color_map(),
     'adjustments' => $adjustmentFields,
+    'selectionDefinitions' => $selectionDefinitions,
 ];
 
 $pageTitle = 'MySmoothie | Konfigurator';
@@ -64,7 +70,7 @@ include __DIR__ . '/../templates/layout/header.php';
       <div class="card-body p-4">
         <!-- Schritt 1: Größe wählen oder Preset laden -->
         <section class="config-step is-active" data-step="1">
-          <h2 class="h5">Schritt 1: Größe wählen</h2>
+          <h2 class="h5">Schritt 1: <?= e((string) ($sizeSelection['title'] ?? 'Größe wählen')) ?></h2>
           <p class="text-muted">Wähle zuerst die Becher-Größe oder lade ein Preset.</p>
 
           <div class="row g-3 mb-4">
@@ -88,7 +94,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
-          <h3 class="h6 mb-3">Preset laden (Zusatzfeature)</h3>
+          <h3 class="h6 mb-3"><?= e((string) ($presetSelection['title'] ?? 'Preset laden')) ?> (Zusatzfeature)</h3>
           <div class="row g-3">
             <?php foreach ($presets as $preset): ?>
               <div class="col-md-6">
@@ -208,7 +214,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
-          <h3 class="h6">Toppings</h3>
+          <h3 class="h6"><?= e((string) ($toppingSelection['title'] ?? 'Toppings')) ?></h3>
           <div class="row g-2 mb-4">
             <?php foreach ($toppings as $topping): ?>
               <div class="col-md-6">

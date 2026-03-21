@@ -63,6 +63,9 @@
 
   // ---------- Konstante Label/Styles ----------
   const rawAdjustments = Array.isArray(configData.adjustments) ? configData.adjustments : [];
+  const rawSelectionDefinitions = configData && typeof configData.selectionDefinitions === 'object'
+    ? configData.selectionDefinitions
+    : {};
 
   function normalizeAdjustmentDefinition(definition) {
     if (!definition || typeof definition !== 'object') {
@@ -114,9 +117,19 @@
     definition.options.forEach((option) => {
       optionMap[option.value] = option.label;
     });
+    accumulator[definition.field] = optionMap;
     accumulator[definition.jsKey] = optionMap;
     return accumulator;
   }, {});
+
+  const selectionLabels = {
+    size: rawSelectionDefinitions.sizes && typeof rawSelectionDefinitions.sizes === 'object'
+      ? String(rawSelectionDefinitions.sizes.item_label_singular || 'Größe')
+      : 'Größe',
+    toppingPlural: rawSelectionDefinitions.toppings && typeof rawSelectionDefinitions.toppings === 'object'
+      ? String(rawSelectionDefinitions.toppings.item_label_plural || 'Toppings')
+      : 'Toppings',
+  };
 
   const defaultCategoryColor = {
     fruit: '#ff8fa3',
@@ -155,6 +168,25 @@
 
     const value = typeof select.value === 'string' ? select.value : '';
     return value !== '' ? value : definition.defaultValue;
+  }
+
+  function getAdjustmentStateValue(definition) {
+    const valueFromField = state.adjustments[definition.field];
+    if (typeof valueFromField === 'string' && valueFromField !== '') {
+      return valueFromField;
+    }
+
+    const valueFromJsKey = state.adjustments[definition.jsKey];
+    if (typeof valueFromJsKey === 'string' && valueFromJsKey !== '') {
+      return valueFromJsKey;
+    }
+
+    return definition.defaultValue;
+  }
+
+  function setAdjustmentStateValue(definition, value) {
+    state.adjustments[definition.field] = value;
+    state.adjustments[definition.jsKey] = value;
   }
 
   // Einheitliches Währungsformat für alle Preisanzeigen.
@@ -462,8 +494,8 @@
       : 'Nicht ausgewählt';
 
     const adjustmentLines = normalizedAdjustments.map((definition) => {
-      const selectedValue = state.adjustments[definition.jsKey] || definition.defaultValue;
-      const labelMap = labels[definition.jsKey] || {};
+      const selectedValue = getAdjustmentStateValue(definition);
+      const labelMap = labels[definition.field] || labels[definition.jsKey] || {};
       const selectedLabel = labelMap[selectedValue] || selectedValue;
       return `${escapeHtml(definition.label)}: ${escapeHtml(selectedLabel)}`;
     });
@@ -475,7 +507,7 @@
     summaryContainer.innerHTML = `
       <div class="row g-3 small">
         <div class="col-md-6">
-          <strong>Größe</strong><br>
+          <strong>${escapeHtml(selectionLabels.size)}</strong><br>
           ${sizeText}
         </div>
         <div class="col-md-6">
@@ -487,7 +519,7 @@
           ${ingredientsList}
         </div>
         <div class="col-md-6">
-          <strong>Toppings (${selectedToppings.length})</strong><br>
+          <strong>${escapeHtml(selectionLabels.toppingPlural)} (${selectedToppings.length})</strong><br>
           ${toppingsList}
         </div>
       </div>
@@ -575,7 +607,7 @@
     state.ingredientIds = getCheckedValues(ingredientCheckboxes);
     state.toppingIds = getCheckedValues(toppingCheckboxes);
     normalizedAdjustments.forEach((definition) => {
-      state.adjustments[definition.jsKey] = getAdjustmentValueFromUi(definition);
+      setAdjustmentStateValue(definition, getAdjustmentValueFromUi(definition));
     });
   }
 
@@ -600,9 +632,9 @@
       }
 
       const allowedValues = new Set(definition.options.map((option) => option.value));
-      const currentValue = state.adjustments[definition.jsKey] || definition.defaultValue;
+      const currentValue = getAdjustmentStateValue(definition);
       const nextValue = allowedValues.has(currentValue) ? currentValue : definition.defaultValue;
-      state.adjustments[definition.jsKey] = nextValue;
+      setAdjustmentStateValue(definition, nextValue);
       select.value = nextValue;
     });
   }
@@ -717,7 +749,7 @@
 
     const adjustmentsPayload = {};
     normalizedAdjustments.forEach((definition) => {
-      adjustmentsPayload[definition.field] = state.adjustments[definition.jsKey] || definition.defaultValue;
+      adjustmentsPayload[definition.field] = getAdjustmentStateValue(definition);
     });
 
     try {
@@ -765,7 +797,8 @@
     state.toppingIds = [];
     normalizedAdjustments.forEach((definition) => {
       const rawValue = preset[definition.field] ?? preset[definition.jsKey] ?? definition.defaultValue;
-      state.adjustments[definition.jsKey] = typeof rawValue === 'string' ? rawValue : definition.defaultValue;
+      const nextValue = typeof rawValue === 'string' ? rawValue : definition.defaultValue;
+      setAdjustmentStateValue(definition, nextValue);
     });
 
     markCouponDirty();

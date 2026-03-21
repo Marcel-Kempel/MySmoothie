@@ -50,6 +50,16 @@ function configuration_adjustment_fields(): array
                 'high' => 'Viel',
             ],
         ],
+        'geschmack' => [
+            'label' => 'Geschmack',
+            'default' => 'medium',
+            'js_key' => 'geschmack',
+            'options' => [
+                'none' => 'kein Angabe',
+                'low' => 'schmeckt nicht',
+                'medium' => 'Ist Ok',
+            ],
+        ],
         'sweetener_type' => [
             'label' => 'Süßungsmittel',
             'default' => 'none',
@@ -160,15 +170,124 @@ function configuration_adjustment_values_from_payload(array $payload): array
 
         $value = is_scalar($rawValue) ? trim((string) $rawValue) : $default;
         $allowed = configuration_adjustment_allowed_values($field);
+        $fallback = $default;
+
+        // Falls ein Default versehentlich nicht im Options-Set liegt, auf einen
+        // sicheren erlaubten Wert zurückfallen statt einen DB-Fehler zu erzeugen.
+        if (!in_array($fallback, $allowed, true)) {
+            $fallback = $allowed[0] ?? '';
+        }
 
         if (!in_array($value, $allowed, true)) {
-            $value = $default;
+            $value = $fallback;
         }
 
         $values[$field] = $value;
     }
 
     return $values;
+}
+
+// Zentrale Definitionen fuer DB-basierte Auswahlgruppen im Konfigurator.
+// Neue Felder/Sortierung fuer Groessen, Toppings und Presets werden hier gepflegt.
+function configurator_selection_definitions(): array
+{
+    return [
+        'sizes' => [
+            'title' => 'Größe wählen',
+            'item_label_singular' => 'Größe',
+            'item_label_plural' => 'Größen',
+            'columns' => ['id', 'name', 'ml', 'base_price'],
+            'order_by' => 'ml',
+            'order_direction' => 'ASC',
+        ],
+        'toppings' => [
+            'title' => 'Toppings',
+            'item_label_singular' => 'Topping',
+            'item_label_plural' => 'Toppings',
+            'columns' => ['id', 'name', 'price'],
+            'order_by' => 'name',
+            'order_direction' => 'ASC',
+        ],
+        'presets' => [
+            'title' => 'Preset laden',
+            'item_label_singular' => 'Preset',
+            'item_label_plural' => 'Presets',
+            'columns' => ['id', 'name', 'description', 'size_id'],
+            'order_by' => 'name',
+            'order_direction' => 'ASC',
+        ],
+    ];
+}
+
+function configurator_selection_definition(string $selectionKey): array
+{
+    $definitions = configurator_selection_definitions();
+    $definition = $definitions[$selectionKey] ?? null;
+
+    return is_array($definition) ? $definition : [];
+}
+
+function configurator_selection_columns(string $selectionKey): array
+{
+    $definition = configurator_selection_definition($selectionKey);
+    $columns = $definition['columns'] ?? null;
+    if (!is_array($columns)) {
+        return [];
+    }
+
+    $safeColumns = [];
+    foreach ($columns as $column) {
+        $column = is_scalar($column) ? trim((string) $column) : '';
+        if ($column === '') {
+            continue;
+        }
+
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            continue;
+        }
+
+        $safeColumns[] = $column;
+    }
+
+    return array_values(array_unique($safeColumns));
+}
+
+function configurator_selection_order_sql(string $selectionKey, string $tableAlias = ''): string
+{
+    $definition = configurator_selection_definition($selectionKey);
+    $orderBy = is_scalar($definition['order_by'] ?? null) ? trim((string) $definition['order_by']) : '';
+    if ($orderBy === '' || !preg_match('/^[a-zA-Z0-9_]+$/', $orderBy)) {
+        return '';
+    }
+
+    $direction = strtoupper((string) ($definition['order_direction'] ?? 'ASC'));
+    if ($direction !== 'DESC') {
+        $direction = 'ASC';
+    }
+
+    $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';
+    return $prefix . $orderBy . ' ' . $direction;
+}
+
+function configurator_selection_ui_definitions(): array
+{
+    $ui = [];
+    foreach (configurator_selection_definitions() as $key => $definition) {
+        $selectionKey = (string) $key;
+        $title = (string) ($definition['title'] ?? $selectionKey);
+        $singular = (string) ($definition['item_label_singular'] ?? $selectionKey);
+        $plural = (string) ($definition['item_label_plural'] ?? $singular . 's');
+
+        $ui[$selectionKey] = [
+            'key' => $selectionKey,
+            'title' => $title,
+            'item_label_singular' => $singular,
+            'item_label_plural' => $plural,
+        ];
+    }
+
+    return $ui;
 }
 
 // Zentrale Definition der Zutatenkategorien inkl. Anzeigefarbe (z. B. Visualisierung).

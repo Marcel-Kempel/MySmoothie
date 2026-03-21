@@ -39,15 +39,49 @@ function repo_create_user(array $values): int
 }
 
 // -------------------- Konfigurator-Stammdaten --------------------
+function repo_select_sql_from_columns(array $columns, string $tableAlias = ''): string
+{
+    $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';
+    $parts = [];
+
+    foreach ($columns as $column) {
+        $column = is_scalar($column) ? trim((string) $column) : '';
+        if ($column === '') {
+            continue;
+        }
+
+        $parts[] = $prefix . $column;
+    }
+
+    return implode(', ', $parts);
+}
+
 function repo_get_sizes(): array
 {
-    $statement = db()->query('SELECT id, name, ml, base_price FROM sizes ORDER BY ml');
+    $columns = configurator_selection_columns('sizes');
+    $selectSql = repo_select_sql_from_columns($columns);
+    if ($selectSql === '') {
+        $selectSql = 'id, name, ml, base_price';
+    }
+
+    $orderSql = configurator_selection_order_sql('sizes');
+    if ($orderSql === '') {
+        $orderSql = 'ml ASC';
+    }
+
+    $statement = db()->query('SELECT ' . $selectSql . ' FROM sizes ORDER BY ' . $orderSql);
     return $statement->fetchAll();
 }
 
 function repo_get_size_by_id(int $sizeId): ?array
 {
-    $statement = db()->prepare('SELECT id, name, ml, base_price FROM sizes WHERE id = :id LIMIT 1');
+    $columns = configurator_selection_columns('sizes');
+    $selectSql = repo_select_sql_from_columns($columns);
+    if ($selectSql === '') {
+        $selectSql = 'id, name, ml, base_price';
+    }
+
+    $statement = db()->prepare('SELECT ' . $selectSql . ' FROM sizes WHERE id = :id LIMIT 1');
     $statement->execute([':id' => $sizeId]);
     $size = $statement->fetch();
 
@@ -82,7 +116,18 @@ function repo_get_ingredients(): array
 
 function repo_get_toppings(): array
 {
-    $statement = db()->query('SELECT id, name, price FROM toppings ORDER BY name');
+    $columns = configurator_selection_columns('toppings');
+    $selectSql = repo_select_sql_from_columns($columns);
+    if ($selectSql === '') {
+        $selectSql = 'id, name, price';
+    }
+
+    $orderSql = configurator_selection_order_sql('toppings');
+    if ($orderSql === '') {
+        $orderSql = 'name ASC';
+    }
+
+    $statement = db()->query('SELECT ' . $selectSql . ' FROM toppings ORDER BY ' . $orderSql);
     return $statement->fetchAll();
 }
 
@@ -146,8 +191,14 @@ function repo_get_toppings_by_ids(array $toppingIds): array
     }
 
     $clause = repo_build_in_clause($toppingIds, 'topping_id_');
+    $columns = configurator_selection_columns('toppings');
+    $selectSql = repo_select_sql_from_columns($columns);
+    if ($selectSql === '') {
+        $selectSql = 'id, name, price';
+    }
+
     $statement = db()->prepare(
-        'SELECT id, name, price FROM toppings WHERE id IN (' . $clause['sql'] . ')'
+        'SELECT ' . $selectSql . ' FROM toppings WHERE id IN (' . $clause['sql'] . ')'
     );
     $statement->execute($clause['params']);
 
@@ -157,6 +208,17 @@ function repo_get_toppings_by_ids(array $toppingIds): array
 // -------------------- Presets und Gutscheine --------------------
 function repo_get_presets(): array
 {
+    $presetColumns = configurator_selection_columns('presets');
+    $presetSelectSql = repo_select_sql_from_columns($presetColumns, 'p');
+    if ($presetSelectSql === '') {
+        $presetSelectSql = 'p.id, p.name, p.description, p.size_id';
+    }
+
+    $presetOrderSql = configurator_selection_order_sql('presets', 'p');
+    if ($presetOrderSql === '') {
+        $presetOrderSql = 'p.name ASC';
+    }
+
     $adjustmentColumns = repo_configuration_adjustment_columns();
     $adjustmentDefaults = configuration_adjustment_defaults();
     $adjustmentSelectSql = repo_adjustment_select_sql('p');
@@ -165,10 +227,7 @@ function repo_get_presets(): array
     // Presets inkl. Zutatenliste für schnelle Anzeige im Konfigurator laden.
     $statement = db()->query(
         "SELECT
-            p.id,
-            p.name,
-            p.description,
-            p.size_id,
+            {$presetSelectSql},
 {$adjustmentSelectFragment}            s.name AS size_name,
             s.ml AS size_ml,
             s.base_price,
@@ -179,7 +238,7 @@ function repo_get_presets(): array
          LEFT JOIN preset_ingredients pi ON pi.preset_id = p.id
          LEFT JOIN ingredients i ON i.id = pi.ingredient_id
          GROUP BY p.id
-         ORDER BY p.name"
+         ORDER BY {$presetOrderSql}"
     );
 
     $rows = $statement->fetchAll();
