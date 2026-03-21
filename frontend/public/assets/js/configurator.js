@@ -55,6 +55,70 @@
   const smoothieLiquid = document.getElementById('smoothieLiquid');
   const visualizerInfo = document.getElementById('visualizerInfo');
 
+  // Step-Flow dynamisch aus DOM ableiten, damit neue Schritte ohne JS-Hardcoding funktionieren.
+  const orderedSteps = Array.from(
+    new Set(
+      stepSections
+        .map((section) => Number(section.getAttribute('data-step')))
+        .filter((stepNumber) => Number.isInteger(stepNumber) && stepNumber > 0)
+    )
+  ).sort((left, right) => left - right);
+
+  if (orderedSteps.length === 0) {
+    orderedSteps.push(1);
+  }
+
+  const firstStep = orderedSteps[0];
+
+  function stepPosition(stepNumber) {
+    return orderedSteps.indexOf(stepNumber);
+  }
+
+  function isKnownStep(stepNumber) {
+    return stepPosition(stepNumber) !== -1;
+  }
+
+  function getAdjacentStep(stepNumber, offset) {
+    const index = stepPosition(stepNumber);
+    if (index === -1) {
+      return null;
+    }
+
+    const nextStep = orderedSteps[index + offset];
+    return Number.isInteger(nextStep) ? nextStep : null;
+  }
+
+  function findStepNumberForElement(element) {
+    if (!(element instanceof Element)) {
+      return null;
+    }
+
+    const stepSection = element.closest('.config-step');
+    if (!(stepSection instanceof Element)) {
+      return null;
+    }
+
+    const stepNumber = Number(stepSection.getAttribute('data-step'));
+    return Number.isInteger(stepNumber) ? stepNumber : null;
+  }
+
+  function hasPassedStep(targetStep, gateStep) {
+    if (gateStep === null) {
+      return false;
+    }
+
+    const targetIndex = stepPosition(targetStep);
+    const gateIndex = stepPosition(gateStep);
+    if (targetIndex === -1 || gateIndex === -1) {
+      return false;
+    }
+
+    return targetIndex > gateIndex;
+  }
+
+  const sizeSelectionStep = findStepNumberForElement(sizeInputs[0] || null);
+  const ingredientSelectionStep = findStepNumberForElement(ingredientCheckboxes[0] || null);
+
   // ---------- Lookup-Strukturen ----------
   const sizeById = new Map(sizes.map((size) => [Number(size.id), size]));
   const ingredientById = new Map(ingredients.map((ingredient) => [Number(ingredient.id), ingredient]));
@@ -151,7 +215,7 @@
 
   // ---------- UI-Status ----------
   const state = {
-    currentStep: 1,
+    currentStep: firstStep,
     sizeId: null,
     ingredientIds: [],
     toppingIds: [],
@@ -276,30 +340,33 @@
   }
 
   function validateCurrentStep() {
-    if (state.currentStep === 1) {
-      return ensureSizeSelected();
-    }
-
-    if (state.currentStep === 2) {
-      return ensureIngredientsSelected();
-    }
-
-    clearStepMessage();
-    return true;
-  }
-
-  // Direktsprünge sind erlaubt, aber nur wenn Pflichtdaten davor bereits gesetzt sind.
-  function canNavigateToStep(targetStep) {
-    if (targetStep <= 1) {
+    const nextStep = getAdjacentStep(state.currentStep, 1);
+    if (nextStep === null) {
       clearStepMessage();
       return true;
     }
 
-    if (!ensureSizeSelected()) {
+    return canNavigateToStep(nextStep);
+  }
+
+  // Direktsprünge sind erlaubt, aber nur wenn Pflichtdaten davor bereits gesetzt sind.
+  function canNavigateToStep(targetStep) {
+    if (!isKnownStep(targetStep)) {
       return false;
     }
 
-    if (targetStep >= 3 && !ensureIngredientsSelected()) {
+    const currentIndex = stepPosition(state.currentStep);
+    const targetIndex = stepPosition(targetStep);
+    if (targetIndex === -1 || currentIndex === -1 || targetIndex <= currentIndex) {
+      clearStepMessage();
+      return true;
+    }
+
+    if (hasPassedStep(targetStep, sizeSelectionStep) && !ensureSizeSelected()) {
+      return false;
+    }
+
+    if (hasPassedStep(targetStep, ingredientSelectionStep) && !ensureIngredientsSelected()) {
       return false;
     }
 
@@ -308,8 +375,14 @@
   }
 
   function setStep(stepNumber) {
+    if (!isKnownStep(stepNumber)) {
+      return;
+    }
+
     // Sichtbarkeit der Step-Inhalte, Step-Pills und Navigation synchronisieren.
     state.currentStep = stepNumber;
+    const currentPosition = stepPosition(state.currentStep);
+    const totalSteps = orderedSteps.length;
 
     stepSections.forEach((section) => {
       const sectionStep = Number(section.getAttribute('data-step'));
@@ -322,19 +395,20 @@
     });
 
     if (stepBadge) {
-      stepBadge.textContent = `Schritt ${state.currentStep} von 4`;
+      stepBadge.textContent = `Schritt ${Math.max(1, currentPosition + 1)} von ${totalSteps}`;
     }
 
     if (stepProgress) {
-      stepProgress.style.width = `${state.currentStep * 25}%`;
+      const progressPercent = ((currentPosition + 1) / totalSteps) * 100;
+      stepProgress.style.width = `${progressPercent}%`;
     }
 
     if (prevStepBtn) {
-      prevStepBtn.disabled = state.currentStep === 1;
+      prevStepBtn.disabled = getAdjacentStep(state.currentStep, -1) === null;
     }
 
     if (nextStepBtn) {
-      nextStepBtn.classList.toggle('d-none', state.currentStep === 4);
+      nextStepBtn.classList.toggle('d-none', getAdjacentStep(state.currentStep, 1) === null);
     }
 
     clearStepMessage();
@@ -862,8 +936,9 @@
 
   if (prevStepBtn) {
     prevStepBtn.addEventListener('click', () => {
-      if (state.currentStep > 1) {
-        setStep(state.currentStep - 1);
+      const previousStep = getAdjacentStep(state.currentStep, -1);
+      if (previousStep !== null) {
+        setStep(previousStep);
       }
     });
   }
@@ -874,8 +949,9 @@
         return;
       }
 
-      if (state.currentStep < 4) {
-        setStep(state.currentStep + 1);
+      const nextStep = getAdjacentStep(state.currentStep, 1);
+      if (nextStep !== null) {
+        setStep(nextStep);
       }
     });
   }
@@ -883,7 +959,7 @@
   stepIndicators.forEach((indicator) => {
     indicator.addEventListener('click', () => {
       const targetStep = Number(indicator.getAttribute('data-step-indicator'));
-      if (!Number.isInteger(targetStep) || targetStep < 1 || targetStep > 4) {
+      if (!Number.isInteger(targetStep) || !isKnownStep(targetStep)) {
         return;
       }
 
@@ -918,6 +994,6 @@
   // ---------- Initialisierung ----------
   readSelectionsFromUi();
   filterIngredients();
-  setStep(1);
+  setStep(firstStep);
   refreshUi();
 })();
