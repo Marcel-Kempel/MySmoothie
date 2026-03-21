@@ -16,6 +16,7 @@ $categoryLabels = ingredient_category_label_map();
 $ingredientCategoryOptions = ingredient_category_ui_definitions();
 $ingredientBadgeDefinitions = ingredient_feature_badge_rows();
 $adjustmentFields = configuration_adjustment_ui_definitions();
+// Zentrale UI-Texte fuer DB-basierte Auswahlgruppen (Groessen/Toppings/Presets).
 $selectionDefinitions = configurator_selection_ui_definitions();
 
 $sizeSelection = $selectionDefinitions['sizes'] ?? [];

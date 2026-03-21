@@ -67,6 +67,7 @@
     ? configData.selectionDefinitions
     : {};
 
+  // Vereinheitlicht Backend-Definitionsobjekte in eine robuste JS-Struktur.
   function normalizeAdjustmentDefinition(definition) {
     if (!definition || typeof definition !== 'object') {
       return null;
@@ -170,6 +171,7 @@
     return value !== '' ? value : definition.defaultValue;
   }
 
+  // Liest einen Anpassungswert tolerant über Feldname und js_key.
   function getAdjustmentStateValue(definition) {
     const valueFromField = state.adjustments[definition.field];
     if (typeof valueFromField === 'string' && valueFromField !== '') {
@@ -184,6 +186,7 @@
     return definition.defaultValue;
   }
 
+  // Hält Feldname und js_key im State synchron, damit Summary + Payload stabil bleiben.
   function setAdjustmentStateValue(definition, value) {
     state.adjustments[definition.field] = value;
     state.adjustments[definition.jsKey] = value;

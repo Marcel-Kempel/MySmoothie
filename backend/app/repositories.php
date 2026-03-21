@@ -39,6 +39,7 @@ function repo_create_user(array $values): int
 }
 
 // -------------------- Konfigurator-Stammdaten --------------------
+// Baut eine SELECT-Spaltenliste aus einem zentralen Column-Array.
 function repo_select_sql_from_columns(array $columns, string $tableAlias = ''): string
 {
     $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';

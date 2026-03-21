@@ -39,27 +39,6 @@ function configuration_adjustment_fields(): array
                 'frozen' => 'Frozen',
             ],
         ],
-        'icelevel' => [
-            'label' => 'Eis Menge',
-            'default' => 'medium',
-            'js_key' => 'iceLevel',
-            'options' => [
-                'none' => 'Kein Eis',
-                'low' => 'Wenig',
-                'medium' => 'Mittel',
-                'high' => 'Viel',
-            ],
-        ],
-        'geschmack' => [
-            'label' => 'Geschmack',
-            'default' => 'medium',
-            'js_key' => 'geschmack',
-            'options' => [
-                'none' => 'kein Angabe',
-                'low' => 'schmeckt nicht',
-                'medium' => 'Ist Ok',
-            ],
-        ],
         'sweetener_type' => [
             'label' => 'Süßungsmittel',
             'default' => 'none',
@@ -228,6 +207,7 @@ function configurator_selection_definition(string $selectionKey): array
     return is_array($definition) ? $definition : [];
 }
 
+// Liefert sichere, SQL-taugliche Spaltennamen aus der zentralen Auswahldefinition.
 function configurator_selection_columns(string $selectionKey): array
 {
     $definition = configurator_selection_definition($selectionKey);
@@ -253,6 +233,7 @@ function configurator_selection_columns(string $selectionKey): array
     return array_values(array_unique($safeColumns));
 }
 
+// Baut ein abgesichertes ORDER-BY-Fragment aus der zentralen Auswahldefinition.
 function configurator_selection_order_sql(string $selectionKey, string $tableAlias = ''): string
 {
     $definition = configurator_selection_definition($selectionKey);
@@ -270,6 +251,7 @@ function configurator_selection_order_sql(string $selectionKey, string $tableAli
     return $prefix . $orderBy . ' ' . $direction;
 }
 
+// UI-Metadaten (Titel/Bezeichnungen) fuer die Auswahlgruppen im Konfigurator.
 function configurator_selection_ui_definitions(): array
 {
     $ui = [];
