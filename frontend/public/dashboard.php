@@ -7,12 +7,18 @@ require_once __DIR__ . '/../../backend/app/bootstrap.php';
 require_login();
 $user = current_user();
 
+// Sicherheitsnetz: Falls die Session zwischenzeitlich invalide wurde, neu anmelden.
+if (!is_array($user)) {
+    redirect('login.php');
+}
+
+// POST-Flow: löscht genau eine Konfiguration des aktuellen Users.
 if (is_post_request()) {
     csrf_validate_or_fail($_POST['csrf_token'] ?? null);
 
     $configurationId = (int) ($_POST['configuration_id'] ?? 0);
     if ($configurationId > 0 && $user) {
-        $deleted = repo_delete_configuration_for_user($configurationId, (int) $user['id']);
+        $deleted = service_delete_user_configuration((int) $user['id'], $configurationId);
         if ($deleted) {
             flash_set('success', 'Konfiguration wurde gelöscht.');
         } else {
@@ -23,25 +29,11 @@ if (is_post_request()) {
     redirect('dashboard.php');
 }
 
-$configurations = $user ? repo_get_user_configurations((int) $user['id']) : [];
+$dashboardData = service_get_dashboard_data((int) $user['id']);
+$configurations = $dashboardData['configurations'];
 
-$sweetnessLabels = [
-    'none' => 'Kein Zucker',
-    'low' => 'Wenig',
-    'medium' => 'Mittel',
-    'high' => 'Süß',
-];
-$consistencyLabels = [
-    'liquid' => 'Flüssig',
-    'standard' => 'Standard',
-    'creamy' => 'Cremig',
-    'extra_creamy' => 'Extra cremig',
-];
-$temperatureLabels = [
-    'chilled' => 'Gekühlt',
-    'extra_cold' => 'Extra kalt',
-    'frozen' => 'Frozen',
-];
+// Mapping von technischen Enum-Werten zu lesbaren Labels aus einem zentralen Backend-Ort.
+$optionLabels = configuration_option_labels();
 
 $pageTitle = 'MySmoothie | Dashboard';
 $activeNav = 'dashboard';
@@ -49,23 +41,25 @@ $pageScripts = ['assets/js/dashboard.js'];
 
 include __DIR__ . '/../templates/layout/header.php';
 ?>
+<!-- Kopfbereich mit schneller Navigation zurück in den Konfigurator -->
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
   <div>
     <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-muted mb-0">Gespeicherte Konfigurationen für <?= e((string) ($user['first_name'] ?? '')) ?> <?= e((string) ($user['last_name'] ?? '')) ?></p>
+    <p class="text-muted mb-0">Gespeicherte Konfigurationen für <?= e((string) $user['first_name']) ?> <?= e((string) $user['last_name']) ?></p>
   </div>
   <a class="btn btn-success" href="configurator.php">Neuen Smoothie konfigurieren</a>
 </div>
 
+<!-- Überblick über Profildaten und Anzahl gespeicherter Konfigurationen -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body row g-3">
     <div class="col-md-4">
       <div class="text-muted small">E-Mail</div>
-      <div class="fw-semibold"><?= e((string) ($user['email'] ?? '')) ?></div>
+      <div class="fw-semibold"><?= e((string) $user['email']) ?></div>
     </div>
     <div class="col-md-4">
       <div class="text-muted small">Adresse</div>
-      <div class="fw-semibold"><?= e((string) ($user['address'] ?? '')) ?></div>
+      <div class="fw-semibold"><?= e((string) $user['address']) ?></div>
     </div>
     <div class="col-md-4">
       <div class="text-muted small">Gespeicherte Smoothies</div>
@@ -75,6 +69,7 @@ include __DIR__ . '/../templates/layout/header.php';
 </div>
 
 <?php if ($configurations === []): ?>
+  <!-- Empty-State für neue User ohne gespeicherte Konfiguration -->
   <div class="card border-0 shadow-sm">
     <div class="card-body text-center py-5">
       <h2 class="h5">Noch keine Konfiguration gespeichert</h2>
@@ -83,6 +78,7 @@ include __DIR__ . '/../templates/layout/header.php';
     </div>
   </div>
 <?php else: ?>
+  <!-- Kartenliste der gespeicherten Konfigurationen -->
   <div class="row g-4">
     <?php foreach ($configurations as $configuration): ?>
       <div class="col-lg-6">
@@ -97,10 +93,10 @@ include __DIR__ . '/../templates/layout/header.php';
             </div>
 
             <div class="small mb-3">
-              <div><strong>Süßgrad:</strong> <?= e($sweetnessLabels[(string) $configuration['sweetness']] ?? (string) $configuration['sweetness']) ?></div>
-              <div><strong>Konsistenz:</strong> <?= e($consistencyLabels[(string) $configuration['consistency']] ?? (string) $configuration['consistency']) ?></div>
-              <div><strong>Temperatur:</strong> <?= e($temperatureLabels[(string) $configuration['temperature']] ?? (string) $configuration['temperature']) ?></div>
-              <div><strong>Süßungsmittel:</strong> <?= e($sweetenerTypeLabels[(string) $configuration['sweetener_type']] ?? (string) $configuration['sweetener_type']) ?></div>
+              <div><strong>Süßgrad:</strong> <?= e($optionLabels['sweetness'][(string) $configuration['sweetness']] ?? (string) $configuration['sweetness']) ?></div>
+              <div><strong>Konsistenz:</strong> <?= e($optionLabels['consistency'][(string) $configuration['consistency']] ?? (string) $configuration['consistency']) ?></div>
+              <div><strong>Temperatur:</strong> <?= e($optionLabels['temperature'][(string) $configuration['temperature']] ?? (string) $configuration['temperature']) ?></div>
+              <div><strong>Süßungsmittel:</strong> <?= e($optionLabels['sweetener_type'][(string) $configuration['sweetener_type']] ?? (string) $configuration['sweetener_type']) ?></div>
             </div>
 
             <div class="mb-3">

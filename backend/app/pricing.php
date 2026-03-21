@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// Erlaubte Auswahlwerte aus Schritt 3 (Frontend + Backend bleiben konsistent).
 function allowed_sweetness_values(): array
 {
     return ['none', 'low', 'medium', 'high'];
@@ -22,6 +23,7 @@ function allowed_sweetener_type_values(): array
     return ['none', 'honey', 'agave'];
 }
 
+// Prüft Aktivstatus und optionales Ablaufdatum eines Gutscheins.
 function is_coupon_currently_valid(?array $coupon): bool
 {
     if (!is_array($coupon)) {
@@ -41,6 +43,7 @@ function is_coupon_currently_valid(?array $coupon): bool
     return $validUntil >= $today;
 }
 
+// Zentrale Preisberechnung inkl. optionaler Gutscheinlogik.
 function calculate_pricing(array $size, array $ingredients, array $toppings, ?array $coupon): array
 {
     $basePrice = (float) ($size['base_price'] ?? 0);

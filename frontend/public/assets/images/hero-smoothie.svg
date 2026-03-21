@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">MySmoothie Hero Illustration</title>
+  <desc id="desc">Abstrakte Illustration mit Smoothie-Glas und Fruchtformen.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f2fff6" />
+      <stop offset="100%" stop-color="#e1f7ff" />
+    </linearGradient>
+    <linearGradient id="liquid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff8aa3" />
+      <stop offset="100%" stop-color="#ff5b82" />
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#d9f1ff" stop-opacity="0.55" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#bg)" />
+
+  <circle cx="160" cy="190" r="120" fill="#ffd2a6" opacity="0.5" />
+  <circle cx="1240" cy="170" r="150" fill="#b7ebff" opacity="0.5" />
+  <circle cx="220" cy="760" r="170" fill="#c8f2c6" opacity="0.5" />
+  <circle cx="1180" cy="760" r="190" fill="#ffe5f4" opacity="0.55" />
+
+  <ellipse cx="700" cy="820" rx="330" ry="45" fill="#b5c6d1" opacity="0.35" />
+
+  <rect x="570" y="210" width="260" height="520" rx="84" fill="url(#glass)" stroke="#9ec9de" stroke-width="6" />
+  <rect x="595" y="380" width="210" height="330" rx="60" fill="url(#liquid)" />
+  <rect x="585" y="305" width="230" height="90" rx="45" fill="#fff8f9" opacity="0.9" />
+  <rect x="690" y="120" width="24" height="170" rx="12" fill="#53c6b4" />
+  <path d="M705 120 C720 90, 770 80, 805 95" fill="none" stroke="#53c6b4" stroke-width="14" stroke-linecap="round" />
+
+  <circle cx="480" cy="590" r="64" fill="#ffd24d" />
+  <circle cx="470" cy="575" r="22" fill="#ffe994" />
+  <circle cx="910" cy="585" r="60" fill="#7cd47c" />
+  <circle cx="900" cy="565" r="20" fill="#bff4bf" />
+  <circle cx="980" cy="490" r="48" fill="#ff9b4d" />
+  <circle cx="460" cy="470" r="52" fill="#ff6f91" />
+
+  <path d="M990 450 C1010 420, 1045 430, 1058 402" fill="none" stroke="#5aa35a" stroke-width="9" stroke-linecap="round" />
+  <path d="M446 432 C427 406, 429 381, 410 360" fill="none" stroke="#4c9f67" stroke-width="9" stroke-linecap="round" />
+</svg>

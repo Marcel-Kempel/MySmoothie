@@ -1,1 +1,8 @@
-/docker-compose.yml
+.env
+.env.*
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.vscode/
+*.log

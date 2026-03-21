@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// -------------------- User --------------------
 function repo_find_user_by_email(string $email): ?array
 {
     $statement = db()->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
@@ -37,6 +38,7 @@ function repo_create_user(array $values): int
     return (int) db()->lastInsertId();
 }
 
+// -------------------- Konfigurator-Stammdaten --------------------
 function repo_get_sizes(): array
 {
     $statement = db()->query('SELECT id, name, ml, base_price FROM sizes ORDER BY ml');
@@ -67,8 +69,10 @@ function repo_get_toppings(): array
     return $statement->fetchAll();
 }
 
+// -------------------- ID-Listen für IN-Klauseln --------------------
 function repo_build_in_clause(array $ids, string $prefix): array
 {
+    // Baut dynamische Platzhalter für IN(...) ohne String-Interpolation von User-Daten.
     $placeholders = [];
     $params = [];
 
@@ -84,6 +88,7 @@ function repo_build_in_clause(array $ids, string $prefix): array
     ];
 }
 
+// Lädt genau die Zutaten, die per ID ausgewählt wurden.
 function repo_get_ingredients_by_ids(array $ingredientIds): array
 {
     if ($ingredientIds === []) {
@@ -99,6 +104,7 @@ function repo_get_ingredients_by_ids(array $ingredientIds): array
     return $statement->fetchAll();
 }
 
+// Lädt genau die Toppings, die per ID ausgewählt wurden.
 function repo_get_toppings_by_ids(array $toppingIds): array
 {
     if ($toppingIds === []) {
@@ -114,8 +120,10 @@ function repo_get_toppings_by_ids(array $toppingIds): array
     return $statement->fetchAll();
 }
 
+// -------------------- Presets und Gutscheine --------------------
 function repo_get_presets(): array
 {
+    // Presets inkl. Zutatenliste für schnelle Anzeige im Konfigurator laden.
     $statement = db()->query(
         "SELECT
             p.id,
@@ -125,6 +133,7 @@ function repo_get_presets(): array
             p.sweetness,
             p.consistency,
             p.temperature,
+            p.sweetener_type,
             s.name AS size_name,
             s.ml AS size_ml,
             s.base_price,
@@ -155,6 +164,7 @@ function repo_get_presets(): array
             'sweetness' => (string) $row['sweetness'],
             'consistency' => (string) $row['consistency'],
             'temperature' => (string) $row['temperature'],
+            'sweetener_type' => (string) $row['sweetener_type'],
             'size_name' => (string) $row['size_name'],
             'size_ml' => (int) $row['size_ml'],
             'base_price' => (float) $row['base_price'],
@@ -175,6 +185,7 @@ function repo_find_coupon(string $couponCode): ?array
     return is_array($coupon) ? $coupon : null;
 }
 
+// -------------------- Persistenz von User-Konfigurationen --------------------
 function repo_save_configuration(
     int $userId,
     array $configuration,
@@ -188,6 +199,7 @@ function repo_save_configuration(
     $pdo = db();
 
     try {
+        // Transaktion garantiert: entweder alles (Kopf + Relationen) oder nichts.
         $pdo->beginTransaction();
 
         $insertConfiguration = $pdo->prepare(
@@ -248,6 +260,7 @@ function repo_save_configuration(
 
 function repo_get_user_configurations(int $userId): array
 {
+    // Erst Kopfdatensätze laden, danach Zutaten/Toppings je Konfiguration anreichern.
     $configurationStatement = db()->prepare(
         'SELECT
             c.id,
@@ -255,6 +268,7 @@ function repo_get_user_configurations(int $userId): array
             c.sweetness,
             c.consistency,
             c.temperature,
+            c.sweetener_type,
             c.subtotal,
             c.discount_amount,
             c.total_price,
@@ -300,6 +314,7 @@ function repo_get_user_configurations(int $userId): array
     return $configurations;
 }
 
+// Löscht eine Konfiguration ausschließlich im Besitz des angegebenen Users.
 function repo_delete_configuration_for_user(int $configurationId, int $userId): bool
 {
     $statement = db()->prepare('DELETE FROM configurations WHERE id = :id AND user_id = :user_id');

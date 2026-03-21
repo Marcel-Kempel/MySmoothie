@@ -43,7 +43,7 @@ INSERT INTO toppings (id, name, price) VALUES
   (3, 'Nüsse', 0.60),
   (4, 'Kokosflakes', 0.50);
 
-INSERT INTO presets (id, name, description, size_id, sweetness, consistency, temperature) VALUES
+INSERT INTO presets (id, name, description, size_id, sweetness, consistency, temperature, sweetener_type) VALUES
   (1, 'Green Power', 'Grüne Mischung mit frischer Basis.', 2, 'medium', 'standard', 'chilled', 'none'),
   (2, 'Berry Protein', 'Beeren + Protein für Trainingstage.', 3, 'low', 'creamy', 'extra_cold', 'honey'),
   (3, 'Tropical Vegan', 'Tropisch, vegan und ausgewogen.', 2, 'medium', 'standard', 'chilled', 'agave'),

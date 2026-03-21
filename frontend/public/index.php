@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../backend/app/bootstrap.php';
 
+// Seitenkonfiguration für das zentrale Layout.
 $pageTitle = 'MySmoothie | Landing Page';
 $activeNav = 'home';
 
 include __DIR__ . '/../templates/layout/header.php';
 ?>
+<!-- Hero-Bereich: kurze Projektbeschreibung + primäre Call-to-Actions -->
 <section class="hero rounded-4 overflow-hidden mb-5">
   <div class="row g-0 align-items-stretch">
     <div class="col-lg-6 p-4 p-lg-5 bg-white">
@@ -29,7 +31,7 @@ include __DIR__ . '/../templates/layout/header.php';
     </div>
     <div class="col-lg-6">
       <img
-        src="https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=1200"
+        src="assets/images/hero-smoothie.svg"
         alt="Frischer Smoothie"
         class="w-100 h-100 object-cover"
         style="min-height: 320px;"
@@ -38,6 +40,7 @@ include __DIR__ . '/../templates/layout/header.php';
   </div>
 </section>
 
+<!-- Drei Kernvorteile der Anwendung für eine schnelle Orientierung -->
 <section class="row g-4 mb-4">
   <div class="col-md-4">
     <div class="card h-100 border-0 shadow-sm">

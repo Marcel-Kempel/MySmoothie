@@ -11,14 +11,15 @@ $flashError = flash_get('error');
 <!doctype html>
 <html lang="de">
   <head>
+    <!-- Basis-Metadaten + lokale CSS-Assets -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <title><?= e($pageTitle) ?></title>
     <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="assets/css/app.css">
   </head>
   <body class="bg-body-tertiary">
+    <!-- Hauptnavigation: je nach Login-Zustand unterschiedliche Actions -->
     <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
       <div class="container">
         <a class="navbar-brand fw-bold text-success" href="index.php">MySmoothie</a>
@@ -54,6 +55,7 @@ $flashError = flash_get('error');
       </div>
     </nav>
 
+    <!-- Seiteninhalt; Flash-Messages werden zentral im Layout angezeigt -->
     <main class="container py-4">
       <?php if ($flashSuccess): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">

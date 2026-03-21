@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+// Grundlegende Textbereinigung für Form- und API-Eingaben.
 function clean_text_field(mixed $value, int $maxLength = 255): string
 {
     $text = trim((string) $value);
@@ -12,6 +13,7 @@ function clean_text_field(mixed $value, int $maxLength = 255): string
     return $text;
 }
 
+// Validiert und normalisiert die Registrierungsdaten aus dem Formular.
 function validate_registration_input(array $input): array
 {
     $values = [
@@ -57,8 +59,7 @@ function validate_registration_input(array $input): array
     ];
 }
 
-# Validiert die Eingabedaten für das Login-Formular. Bereinigt die E-Mail-Adresse 
-# und überprüft, ob sie gültig ist, sowie ob ein Passwort eingegeben wurde.
+// Validiert und normalisiert die Login-Daten.
 function validate_login_input(array $input): array
 {
     $values = [
@@ -83,6 +84,7 @@ function validate_login_input(array $input): array
     ];
 }
 
+// Validiert ID-Listen aus JSON (nur positive, eindeutige, sortierte IDs).
 function validate_id_list(mixed $raw): array
 {
     if (!is_array($raw)) {
@@ -103,6 +105,7 @@ function validate_id_list(mixed $raw): array
     return $result;
 }
 
+// Prüft Enum-Werte gegen eine Whitelist und liefert sonst den Fallback.
 function validate_enum_value(string $value, array $allowed, string $fallback): string
 {
     if (in_array($value, $allowed, true)) {
@@ -112,6 +115,7 @@ function validate_enum_value(string $value, array $allowed, string $fallback): s
     return $fallback;
 }
 
+// Liefert einen sicheren, begrenzten Anzeigenamen für die Konfiguration.
 function validate_configuration_name(mixed $raw): string
 {
     $name = clean_text_field($raw, 120);

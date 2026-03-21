@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../backend/app/bootstrap.php';
 
+// Bereits eingeloggte User sollen nicht erneut registrieren.
 if (is_logged_in()) {
     redirect('dashboard.php');
 }
@@ -16,29 +17,18 @@ $formValues = [
 ];
 $errors = [];
 
+// Formular-Submit: validieren, Duplikat-E-Mail prüfen und User anlegen.
 if (is_post_request()) {
     csrf_validate_or_fail($_POST['csrf_token'] ?? null);
 
-    $validated = validate_registration_input($_POST);
-    $formValues = $validated['values'];
-    $errors = $validated['errors'];
+    $registration = service_register_user($_POST);
+    $formValues = $registration['values'];
+    $errors = $registration['errors'];
 
-    if ($errors === []) {
-        if (repo_find_user_by_email($formValues['email']) !== null) {
-            $errors['email'] = 'Diese E-Mail-Adresse ist bereits registriert.';
-        } else {
-            $newUserId = repo_create_user([
-                'first_name' => $formValues['first_name'],
-                'last_name' => $formValues['last_name'],
-                'address' => $formValues['address'],
-                'email' => $formValues['email'],
-                'password_hash' => password_hash($validated['password'], PASSWORD_DEFAULT),
-            ]);
-
-            login_user_by_id($newUserId);
-            flash_set('success', 'Registrierung erfolgreich. Willkommen bei MySmoothie.');
-            redirect('configurator.php');
-        }
+    if ($registration['success']) {
+        login_user_by_id((int) $registration['user_id']);
+        flash_set('success', 'Registrierung erfolgreich. Willkommen bei MySmoothie.');
+        redirect('configurator.php');
     }
 }
 
@@ -47,6 +37,7 @@ $activeNav = '';
 
 include __DIR__ . '/../templates/layout/header.php';
 ?>
+<!-- Registrierungsformular mit serverseitiger Fehlerausgabe -->
 <div class="row justify-content-center">
   <div class="col-lg-8 col-xl-7">
     <div class="card shadow-sm">

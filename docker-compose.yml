@@ -1,0 +1,46 @@
+services:
+  webserver:
+    image: php:8.4-apache
+    ports:
+      - "80:80"
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-webtec}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin}
+      PASSWORD_PEPPER: ${PASSWORD_PEPPER:-}
+    volumes:
+      - ./:/var/www/project
+    command: bash -c "docker-php-ext-install mysqli pdo pdo_mysql && sed -ri -e 's!/var/www/html!/var/www/project/frontend/public!g' /etc/apache2/sites-available/*.conf /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && apache2-foreground"
+    depends_on:
+      - db
+
+  db:
+    image: mariadb
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME:-webtec}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: ${DB_HOST:-db}
+      PMA_USER: ${DB_USER:-root}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - db
+
+volumes:
+  db_data:

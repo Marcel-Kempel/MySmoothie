@@ -4,28 +4,28 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../backend/app/bootstrap.php';
 
-$sizes = repo_get_sizes();
-$ingredients = repo_get_ingredients();
-$toppings = repo_get_toppings();
-$presets = repo_get_presets();
+// Basisdaten fuer den Konfigurator gesammelt aus dem Service-Layer laden.
+$catalog = service_get_configurator_catalog();
+$sizes = $catalog['sizes'];
+$ingredients = $catalog['ingredients'];
+$toppings = $catalog['toppings'];
+$presets = $catalog['presets'];
 
-$categoryLabels = [
-    'fruit' => 'Obst',
-    'vegetable' => 'Gemüse',
-    'protein' => 'Protein',
-];
+// Anzeige-Labels zentral aus dem Backend beziehen (kein UI-Wissen in JS hardcoden).
+$categoryLabels = ingredient_category_labels();
 
+// Datenpaket für das Frontend-Script (wird unten als JSON eingebettet).
 $configData = [
     'sizes' => $sizes,
     'ingredients' => $ingredients,
     'toppings' => $toppings,
     'presets' => $presets,
     'csrfToken' => csrf_token(),
-    'isAuthenticated' => is_logged_in(),
     'api' => [
         'applyCoupon' => 'api/apply_coupon.php',
         'saveConfiguration' => 'api/save_configuration.php',
     ],
+    'labels' => configuration_option_labels_for_js(),
 ];
 
 $pageTitle = 'MySmoothie | Konfigurator';
@@ -34,8 +34,10 @@ $pageScripts = ['assets/js/configurator.js'];
 
 include __DIR__ . '/../templates/layout/header.php';
 ?>
+<!-- Hauptlayout: links der Schritt-Konfigurator, rechts Vorschau + Preis -->
 <div class="row g-4">
   <div class="col-lg-8">
+    <!-- Fortschrittskopf mit Step-Indikator -->
     <div class="card shadow-sm mb-4">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -56,6 +58,7 @@ include __DIR__ . '/../templates/layout/header.php';
 
     <div class="card shadow-sm">
       <div class="card-body p-4">
+        <!-- Schritt 1: Größe wählen oder Preset laden -->
         <section class="config-step is-active" data-step="1">
           <h2 class="h5">Schritt 1: Größe wählen</h2>
           <p class="text-muted">Wähle zuerst die Becher-Größe oder lade ein Preset.</p>
@@ -108,6 +111,7 @@ include __DIR__ . '/../templates/layout/header.php';
           </div>
         </section>
 
+        <!-- Schritt 2: Zutaten auswählen (inkl. Suche und Kategorie-Filter) -->
         <section class="config-step" data-step="2">
           <h2 class="h5">Schritt 2: Zutaten wählen (24 Optionen)</h2>
           <p class="text-muted">Mindestens eine Zutat auswählen. Suche und Filter helfen bei der Auswahl.</p>
@@ -161,6 +165,7 @@ include __DIR__ . '/../templates/layout/header.php';
           <div class="mt-3 small text-muted">Ausgewählt: <span id="selectedIngredientCount">0</span> Zutaten</div>
         </section>
 
+        <!-- Schritt 3: Parameter feinjustieren + optionale Toppings/Gutschein -->
         <section class="config-step" data-step="3">
           <h2 class="h5">Schritt 3: Individuelle Anpassung</h2>
 
@@ -221,9 +226,10 @@ include __DIR__ . '/../templates/layout/header.php';
             <input type="text" id="couponCode" class="form-control" placeholder="z. B. FIT10" maxlength="50">
             <button type="button" class="btn btn-outline-success" id="applyCouponBtn">Gutschein prüfen</button>
           </div>
-          <div id="couponMessage" class="small"></div>
+          <div id="couponMessage" class="small" role="status" aria-live="polite"></div>
         </section>
 
+        <!-- Schritt 4: finale Zusammenfassung und Speichern -->
         <section class="config-step" data-step="4">
           <h2 class="h5">Schritt 4: Zusammenfassung</h2>
           <p class="text-muted">Prüfe deine Konfiguration und bestelle danach.</p>
@@ -238,19 +244,21 @@ include __DIR__ . '/../templates/layout/header.php';
           </div>
 
           <button type="button" id="orderNowBtn" class="btn btn-success btn-lg">Jetzt bestellen</button>
-          <div id="orderMessage" class="small mt-2"></div>
+          <div id="orderMessage" class="small mt-2" role="status" aria-live="polite"></div>
         </section>
 
+        <!-- Navigation zwischen den Schritten -->
         <div class="d-flex justify-content-between border-top pt-4 mt-4">
           <button type="button" id="prevStepBtn" class="btn btn-outline-secondary" disabled>Zurück</button>
           <button type="button" id="nextStepBtn" class="btn btn-success">Weiter</button>
         </div>
-        <div id="stepValidationMessage" class="small mt-3"></div>
+        <div id="stepValidationMessage" class="small mt-3" role="status" aria-live="polite"></div>
       </div>
     </div>
   </div>
 
   <div class="col-lg-4">
+    <!-- Rechte Spalte: Live-Vorschau + Preisübersicht -->
     <div class="sticky-top-config">
       <div class="card shadow-sm mb-4">
         <div class="card-body">
@@ -279,5 +287,6 @@ include __DIR__ . '/../templates/layout/header.php';
   </div>
 </div>
 
+<!-- JSON-Config für frontend/public/assets/js/configurator.js -->
 <script type="application/json" id="config-data"><?= json_encode($configData, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
 <?php include __DIR__ . '/../templates/layout/footer.php'; ?>
