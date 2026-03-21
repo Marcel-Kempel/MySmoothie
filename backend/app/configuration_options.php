@@ -39,6 +39,17 @@ function configuration_adjustment_fields(): array
                 'frozen' => 'Frozen',
             ],
         ],
+        'icelevel' => [
+            'label' => 'Eis Menge',
+            'default' => 'medium',
+            'js_key' => 'iceLevel',
+            'options' => [
+                'none' => 'Kein Eis',
+                'low' => 'Wenig',
+                'medium' => 'Mittel',
+                'high' => 'Viel',
+            ],
+        ],
         'sweetener_type' => [
             'label' => 'Süßungsmittel',
             'default' => 'none',
