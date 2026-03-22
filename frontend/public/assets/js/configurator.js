@@ -385,11 +385,13 @@
     const currentPosition = stepPosition(state.currentStep);
     const totalSteps = orderedSteps.length;
 
+    //anzeigen der Inhalte des jeweiligen Schritts 
     stepSections.forEach((section) => {
       const sectionStep = Number(section.getAttribute('data-step'));
       section.classList.toggle('is-active', sectionStep === state.currentStep);
     });
 
+    // hervorheben der pills (Farbe)Farblogik 
     stepIndicators.forEach((indicator) => {
       const indicatorStep = Number(indicator.getAttribute('data-step-indicator'));
       indicator.classList.toggle('active', indicatorStep === state.currentStep);
@@ -964,6 +966,7 @@
     });
   }
 
+  // Klick-Logik der Pills 
   stepIndicators.forEach((indicator) => {
     indicator.addEventListener('click', () => {
       const targetStep = Number(indicator.getAttribute('data-step-indicator'));

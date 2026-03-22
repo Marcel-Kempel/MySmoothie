@@ -185,7 +185,7 @@ include __DIR__ . '/../templates/layout/header.php';
               </select>
             </div>
           </div>
-
+        <!-- Zutatenkarten-->
           <div class="row g-3" id="ingredientsGrid">
             <?php foreach ($ingredients as $ingredient): ?>
               <?php $ingredientName = (string) $ingredient['name']; ?>
@@ -206,6 +206,7 @@ include __DIR__ . '/../templates/layout/header.php';
                     <div class="small text-muted mb-2">
                       Kategorie: <?= e($categoryLabels[(string) $ingredient['category']] ?? (string) $ingredient['category']) ?>
                     </div>
+                    <!-- Labels Vegan Low Sugar , $ingredientBadgeDefinition aus Backend , für jede Eigenschaft wird geprüft ob sie für aktuelle Zutat aktiv-->
                     <div class="d-flex flex-wrap gap-1 mb-2">
                       <?php foreach ($ingredientBadgeDefinitions as $badge): ?>
                         <?php

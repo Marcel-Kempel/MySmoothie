@@ -93,16 +93,16 @@ function repo_ingredient_select_sql(string $tableAlias = ''): string
 {
     $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';
     $columns = array_merge(
-        ['id', 'name', 'category', 'price', 'image_url'],
+        ['id', 'name', 'category', 'price', 'image_url'], // feste grundspalten plus feature Spalten aus configuration_options(is_vegan)
         ingredient_feature_columns()
     );
 
     $parts = [];
     foreach ($columns as $column) {
-        $parts[] = $prefix . $column;
+        $parts[] = $prefix . $column; // i.id , i.name ; jede Spalte mit Prfix versehen
     }
 
-    return implode(', ', $parts);
+    return implode(', ', $parts); //implode verbindet Array von String mit Trennzeichen zu einem String 
 }
 
 function repo_get_ingredients(): array
