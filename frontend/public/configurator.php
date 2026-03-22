@@ -14,8 +14,7 @@ $presets = $catalog['presets'];
 // Anzeige-Labels zentral aus dem Backend beziehen (kein UI-Wissen in JS hardcoden).
 $categoryLabels = ingredient_category_label_map();
 $ingredientCategoryOptions = ingredient_category_ui_definitions();
-$ingredientBadgeDefinitions = ingredient_feature_badge_rows();
-$adjustmentFields = configuration_adjustment_ui_definitions();
+$adjustmentFields = configuration_adjustment_ui_definitions(); // Dropdowns schritt 3
 $selectionDefinitions = configurator_selection_ui_definitions();
 $stepDefinitions = configurator_step_ui_definitions();
 
@@ -206,17 +205,6 @@ include __DIR__ . '/../templates/layout/header.php';
                     <div class="small text-muted mb-2">
                       Kategorie: <?= e($categoryLabels[(string) $ingredient['category']] ?? (string) $ingredient['category']) ?>
                     </div>
-                    <!-- Labels Vegan Low Sugar , $ingredientBadgeDefinition aus Backend , für jede Eigenschaft wird geprüft ob sie für aktuelle Zutat aktiv-->
-                    <div class="d-flex flex-wrap gap-1 mb-2">
-                      <?php foreach ($ingredientBadgeDefinitions as $badge): ?>
-                        <?php
-                          $badgeField = (string) ($badge['field'] ?? '');
-                          $badgeLabel = (string) ($badge['label'] ?? $badgeField);
-                          $isActive = (int) ($ingredient[$badgeField] ?? 0) === 1;
-                        ?>
-                        <?php if ($isActive): ?><span class="badge text-bg-light border"><?= e($badgeLabel) ?></span><?php endif; ?>
-                      <?php endforeach; ?>
-                    </div>
                     <div class="fw-bold text-success">EUR <?= number_format((float) $ingredient['price'], 2, ',', '.') ?></div>
                   </div>
                 </div>
@@ -230,9 +218,11 @@ include __DIR__ . '/../templates/layout/header.php';
         <section class="config-step" data-step="<?= $stepNumber('adjustments', 3) ?>">
           <h2 class="h5"><?= e($stepHeading('adjustments', 'Schritt 3: Individuelle Anpassung')) ?></h2>
 
+          <!-- Bereich A: Dropdowns für individuelle Anpassungen (z. B. Süße, Konsistenz, Temperatur) -->
           <div class="row g-3 mb-4">
-            <?php foreach ($adjustmentFields as $adjustment): ?>
+            <?php foreach ($adjustmentFields as $adjustment): ?> <!-- äußere Schleife iteriert über dropdown -->
               <?php
+                // Werte vorbereiten aus configuartion_options holen 
                 $field = (string) ($adjustment['field'] ?? '');
                 $label = (string) ($adjustment['label'] ?? $field);
                 $default = (string) ($adjustment['default'] ?? '');
@@ -241,6 +231,8 @@ include __DIR__ . '/../templates/layout/header.php';
               <?php if ($field === ''): ?>
                 <?php continue; ?>
               <?php endif; ?>
+
+              <!-- dropdown erstellen mit label select und options-->
               <div class="col-md-4">
                 <label for="<?= e($field) ?>" class="form-label"><?= e($label) ?></label>
                 <select
@@ -248,6 +240,7 @@ include __DIR__ . '/../templates/layout/header.php';
                   class="form-select"
                   data-adjustment-select="<?= e($field) ?>"
                 >
+                <!-- geht Optionen für ein Dropdpwn durch-->
                   <?php foreach ($options as $option): ?>
                     <?php
                       $value = (string) ($option['value'] ?? '');
@@ -261,6 +254,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
+          <!-- Bereich B: Toppings-Auswahl (Checkboxen) -->
           <h3 class="h6"><?= e((string) ($selectionDefinitions['toppings']['title'] ?? 'Toppings')) ?></h3>
           <div class="row g-2 mb-4">
             <?php foreach ($toppings as $topping): ?>
@@ -276,6 +270,7 @@ include __DIR__ . '/../templates/layout/header.php';
             <?php endforeach; ?>
           </div>
 
+          <!-- Bereich C: Gutschein-Eingabe + Rückmeldung -->
           <h3 class="h6">Gutscheincode (Zusatzfeature)</h3>
           <div class="input-group mb-2">
             <input type="text" id="couponCode" class="form-control" placeholder="z. B. FIT10" maxlength="50">

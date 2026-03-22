@@ -63,7 +63,6 @@ include __DIR__ . '/../templates/layout/header.php';
                 <div class="invalid-feedback"><?= e($errors['last_name']) ?></div>
               <?php endif; ?>
             </div>
-
             <div class="col-12">
               <label for="address" class="form-label">Adresse</label>
               <input type="text" class="form-control<?= isset($errors['address']) ? ' is-invalid' : '' ?>" id="address" name="address" placeholder="Strasse, Hausnummer, PLZ, Ort" value="<?= e($formValues['address']) ?>" required>

@@ -92,17 +92,14 @@ function repo_get_size_by_id(int $sizeId): ?array
 function repo_ingredient_select_sql(string $tableAlias = ''): string
 {
     $prefix = $tableAlias !== '' ? $tableAlias . '.' : '';
-    $columns = array_merge(
-        ['id', 'name', 'category', 'price', 'image_url'], // feste grundspalten plus feature Spalten aus configuration_options(is_vegan)
-        ingredient_feature_columns()
-    );
+    $columns = ['id', 'name', 'category', 'price', 'image_url', 'is_active'];
 
     $parts = [];
     foreach ($columns as $column) {
-        $parts[] = $prefix . $column; // i.id , i.name ; jede Spalte mit Prfix versehen
+        $parts[] = $prefix . $column;
     }
 
-    return implode(', ', $parts); //implode verbindet Array von String mit Trennzeichen zu einem String 
+    return implode(', ', $parts);
 }
 
 function repo_get_ingredients(): array

@@ -371,32 +371,3 @@ function ingredient_category_ui_definitions(): array
 
     return $definitions;
 }
-
-// Zentrale Badge-Definitionen fuer Zutatenkarten (Step 2).
-function ingredient_feature_badge_definitions(): array
-{
-    return [
-        'is_vegan' => 'Vegan',
-        'is_lactose_free' => 'Laktosefrei',
-        'is_high_protein' => 'High Protein',
-        'is_low_sugar' => 'Low Sugar',
-    ];
-}
-
-function ingredient_feature_columns(): array
-{
-    return array_keys(ingredient_feature_badge_definitions());
-}
-
-function ingredient_feature_badge_rows(): array
-{
-    $rows = [];
-    foreach (ingredient_feature_badge_definitions() as $field => $label) {
-        $rows[] = [
-            'field' => (string) $field,
-            'label' => (string) $label,
-        ];
-    }
-
-    return $rows;
-}
