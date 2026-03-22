@@ -55,70 +55,6 @@
   const smoothieLiquid = document.getElementById('smoothieLiquid');
   const visualizerInfo = document.getElementById('visualizerInfo');
 
-  // Step-Flow dynamisch aus DOM ableiten, damit neue Schritte ohne JS-Hardcoding funktionieren.
-  const orderedSteps = Array.from(
-    new Set(
-      stepSections
-        .map((section) => Number(section.getAttribute('data-step')))
-        .filter((stepNumber) => Number.isInteger(stepNumber) && stepNumber > 0)
-    )
-  ).sort((left, right) => left - right);
-
-  if (orderedSteps.length === 0) {
-    orderedSteps.push(1);
-  }
-
-  const firstStep = orderedSteps[0];
-
-  function stepPosition(stepNumber) {
-    return orderedSteps.indexOf(stepNumber);
-  }
-
-  function isKnownStep(stepNumber) {
-    return stepPosition(stepNumber) !== -1;
-  }
-
-  function getAdjacentStep(stepNumber, offset) {
-    const index = stepPosition(stepNumber);
-    if (index === -1) {
-      return null;
-    }
-
-    const nextStep = orderedSteps[index + offset];
-    return Number.isInteger(nextStep) ? nextStep : null;
-  }
-
-  function findStepNumberForElement(element) {
-    if (!(element instanceof Element)) {
-      return null;
-    }
-
-    const stepSection = element.closest('.config-step');
-    if (!(stepSection instanceof Element)) {
-      return null;
-    }
-
-    const stepNumber = Number(stepSection.getAttribute('data-step'));
-    return Number.isInteger(stepNumber) ? stepNumber : null;
-  }
-
-  function hasPassedStep(targetStep, gateStep) {
-    if (gateStep === null) {
-      return false;
-    }
-
-    const targetIndex = stepPosition(targetStep);
-    const gateIndex = stepPosition(gateStep);
-    if (targetIndex === -1 || gateIndex === -1) {
-      return false;
-    }
-
-    return targetIndex > gateIndex;
-  }
-
-  const sizeSelectionStep = findStepNumberForElement(sizeInputs[0] || null);
-  const ingredientSelectionStep = findStepNumberForElement(ingredientCheckboxes[0] || null);
-
   // ---------- Lookup-Strukturen ----------
   const sizeById = new Map(sizes.map((size) => [Number(size.id), size]));
   const ingredientById = new Map(ingredients.map((ingredient) => [Number(ingredient.id), ingredient]));
@@ -215,7 +151,7 @@
 
   // ---------- UI-Status ----------
   const state = {
-    currentStep: firstStep,
+    currentStep: 1,
     sizeId: null,
     ingredientIds: [],
     toppingIds: [],
@@ -317,6 +253,63 @@
     };
   }
 
+  // ---------- Step Navigation + Validation ----------
+  // Einfache Schalter für Pflichtregeln.
+  const requireSizeOnStep1 = true;
+  const requireIngredientOnStep2 = true;
+
+  // Step-Flow dynamisch aus DOM ableiten, damit neue Schritte ohne JS-Hardcoding funktionieren.
+  const orderedSteps = Array.from(
+    new Set(
+      stepSections
+        .map((section) => Number(section.getAttribute('data-step')))
+        .filter((stepNumber) => Number.isInteger(stepNumber) && stepNumber > 0)
+    )
+  ).sort((left, right) => left - right);
+
+  if (orderedSteps.length === 0) {
+    orderedSteps.push(1);
+  }
+
+  const firstStep = orderedSteps[0];
+
+  // scuht stepNummer in orderSteps und gibt index zurück 
+  function stepPosition(stepNumber) {
+    return orderedSteps.indexOf(stepNumber);
+  }
+
+  function isKnownStep(stepNumber) {
+    return stepPosition(stepNumber) !== -1;
+  }
+
+  // hilt den Index für den Schritt -> rechnet Zielindex (index + offset) -> leist aus orderstp den Wert 
+  function getAdjacentStep(stepNumber, offset) {
+    const index = stepPosition(stepNumber);
+    if (index === -1) {
+      return null;
+    }
+
+    const adjacentStep = orderedSteps[index + offset];
+    return Number.isInteger(adjacentStep) ? adjacentStep : null;
+  }
+
+  function findStepNumberForElement(element) {
+    if (!(element instanceof Element)) {
+      return null;
+    }
+
+    const stepSection = element.closest('.config-step');
+    if (!(stepSection instanceof Element)) {
+      return null;
+    }
+
+    const stepNumber = Number(stepSection.getAttribute('data-step'));
+    return Number.isInteger(stepNumber) ? stepNumber : null;
+  }
+
+  const sizeSelectionStep = findStepNumberForElement(sizeInputs[0] || null);
+  const ingredientSelectionStep = findStepNumberForElement(ingredientCheckboxes[0] || null);
+
   function clearStepMessage() {
     showStepMessage('', '');
   }
@@ -339,35 +332,43 @@
     return false;
   }
 
-  function validateCurrentStep() {
-    const nextStep = getAdjacentStep(state.currentStep, 1);
-    if (nextStep === null) {
-      clearStepMessage();
-      return true;
+  // Regeln für "darf ich den aktuellen Schritt verlassen?".
+  function canLeaveStep(stepNumber) {
+    if (stepNumber === sizeSelectionStep && requireSizeOnStep1) {
+      return ensureSizeSelected();
     }
 
-    return canNavigateToStep(nextStep);
+    if (stepNumber === ingredientSelectionStep && requireIngredientOnStep2) {
+      return ensureIngredientsSelected();
+    }
+
+    clearStepMessage();
+    return true;
   }
 
-  // Direktsprünge sind erlaubt, aber nur wenn Pflichtdaten davor bereits gesetzt sind.
+  // Für den Weiter-Button (immer genau ein Schritt nach vorne).
+  function canGoNextFromCurrentStep() {
+    return canLeaveStep(state.currentStep);
+  }
+
+  // Für Step-Pills: Vorwärtssprünge prüfen alle dazwischenliegenden Schritte.
   function canNavigateToStep(targetStep) {
     if (!isKnownStep(targetStep)) {
       return false;
     }
 
-    const currentIndex = stepPosition(state.currentStep);
-    const targetIndex = stepPosition(targetStep);
-    if (targetIndex === -1 || currentIndex === -1 || targetIndex <= currentIndex) {
+    const fromIndex = stepPosition(state.currentStep);
+    const toIndex = stepPosition(targetStep);
+    if (fromIndex === -1 || toIndex === -1 || toIndex <= fromIndex) {
       clearStepMessage();
       return true;
     }
 
-    if (hasPassedStep(targetStep, sizeSelectionStep) && !ensureSizeSelected()) {
-      return false;
-    }
-
-    if (hasPassedStep(targetStep, ingredientSelectionStep) && !ensureIngredientsSelected()) {
-      return false;
+    for (let index = fromIndex; index < toIndex; index += 1) {
+      const stepToLeave = orderedSteps[index];
+      if (!canLeaveStep(stepToLeave)) {
+        return false;
+      }
     }
 
     clearStepMessage();
@@ -945,14 +946,17 @@
 
   if (nextStepBtn) {
     nextStepBtn.addEventListener('click', () => {
-      if (!validateCurrentStep()) {
+      const nextStep = getAdjacentStep(state.currentStep, 1);
+      if (nextStep === null) {
+        clearStepMessage();
         return;
       }
 
-      const nextStep = getAdjacentStep(state.currentStep, 1);
-      if (nextStep !== null) {
-        setStep(nextStep);
+      if (!canGoNextFromCurrentStep()) {
+        return;
       }
+
+      setStep(nextStep);
     });
   }
 
