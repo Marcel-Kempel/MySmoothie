@@ -404,10 +404,14 @@
       stepProgress.style.width = `${progressPercent}%`;
     }
 
+
     if (prevStepBtn) {
-      prevStepBtn.disabled = getAdjacentStep(state.currentStep, -1) === null;
+      const hasPreviousStep = getAdjacentStep(state.currentStep, -1) !== null; // variable mit vorherigem schritt
+      prevStepBtn.classList.toggle('d-none', !hasPreviousStep);             // Button verstecken, wenn es keinen vorherigen Schritt gibt
+      prevStepBtn.disabled = !hasPreviousStep;              // weil in html Button discard gesetzt ist, ohne das würde disabled nie wieder auf fasle gesetzt werden -> nie klickbar 
     }
 
+   // 'd-none blendet button aus'
     if (nextStepBtn) {
       nextStepBtn.classList.toggle('d-none', getAdjacentStep(state.currentStep, 1) === null);
     }
